@@ -124,6 +124,15 @@ chmod +x setup_env.sh run.sh sgc_python.sh
 
 Isso cria o `venv/` e instala as dependências de `requirements.txt`.
 
+Para testes locais:
+
+```bat
+venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+venv\Scripts\python.exe -m pytest python/tests -q
+```
+
+Retenção de logs/relatórios/modelos antigos (dry-run / apply): ver [`docs/retencao.md`](docs/retencao.md).
+
 ---
 
 ## Como executar
