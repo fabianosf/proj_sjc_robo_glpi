@@ -133,6 +133,8 @@ venv\Scripts\python.exe -m pytest python/tests -q
 
 Retenção de logs/relatórios/modelos antigos (dry-run / apply): ver [`docs/retencao.md`](docs/retencao.md).
 
+**Como mexer no aplicativo no dia a dia:** [`docs/como-usar-aplicativo.md`](docs/como-usar-aplicativo.md).
+
 ---
 
 ## Como executar
