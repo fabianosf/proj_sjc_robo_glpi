@@ -1,0 +1,2 @@
+# Dependências só para desenvolvimento / CI (não necessárias no Worker em produção)
+pytest>=8.0.0,<9

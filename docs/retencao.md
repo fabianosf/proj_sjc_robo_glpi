@@ -29,6 +29,15 @@
 | PDF/TXT de assertividade e feedback | Retenção sugerida: **12 meses** no servidor de operação; cópias históricas fora do repo. |
 | Geração | Produzidos pelo AgendadorSGC / tarefas ML — não versionar no Git (já em `.gitignore`). |
 
-## Observação
+## Script ops (janela de manutenção)
 
-Esta política é **documental**. A limpeza automática de arquivos antigos não é feita pelo Worker; execute retenção em janela de manutenção (ou scripts ops).
+```bat
+venv\Scripts\python.exe python\aplicar_retencao.py
+venv\Scripts\python.exe python\aplicar_retencao.py --apply
+```
+
+- Sem `--apply`: só lista o que seria removido (dry-run).
+- Com `--apply`: remove logs >90d, stdout/stderr antigos/grandes, relatórios >12 meses, `ModeloML_v*` além das 20 mais recentes, e artefatos `X.pkl` / `ModeloML_test_backup.pkl`.
+- **Não** remove `ModeloML.pkl`, `ModeloML_backup.pkl`, `metrics.json`, `conf/` nem o Worker.
+
+O Worker de atribuição **não** chama este script automaticamente.
