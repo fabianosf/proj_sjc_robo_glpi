@@ -23,8 +23,6 @@ Sistema interno de **atribuição automática de chamados GLPI** + **Control Cen
 - O **worker** é quem atribui chamados Novo → técnico/fila.
 - Perfil **CONSULTA**: painel só leitura.
 - Perfil **ADMIN**: pode redirecionar técnico no **GLPI + SGC**, sync/editar matrícula; **não** dispara agendador nem re-treino pela API.
-- Telegram: opcional (desligado sem token).
-
 ---
 
 ## 2. Stack
@@ -36,7 +34,7 @@ Sistema interno de **atribuição automática de chamados GLPI** + **Control Cen
 | API | FastAPI, Uvicorn, PyJWT, pywin32 (LogonUser AD) |
 | Frontend | React 19, TypeScript, Vite 8, Tailwind 4, TanStack Query, Recharts |
 | Dados | MariaDB (SGC) |
-| Integrações | GLPI REST; Telegram **opcional** (desligado sem token) |
+| Integrações | GLPI REST |
 
 Deps: `requirements.txt` (worker) · `requirements-api.txt` (API) · `frontend/package.json`
 
@@ -72,7 +70,7 @@ GLPI ──► Worker (run.bat) ──► MariaDB
 5. Sem técnico elegível → **skip**: chamado permanece **Novo** no GLPI (não há “técnico default”). Retry no próximo ciclo; log ML/skip contado 1× por ID/dia.
 6. Atribui no GLPI (Ticket_User + status) → **só então** INSERT local (`Dat_Reg`) + carga.  
    *Se INSERT falhar após GLPI ok → órfão + backfill em `Verifica_Usuarios`.*
-7. Telegram: só se `TELEGRAM_TOKEN` definido; senão pula.
+7. Sem notificação Telegram (removido).
 
 ### 4.2 Aprendizado
 
@@ -94,7 +92,7 @@ GLPI ──► Worker (run.bat) ──► MariaDB
 
 ### 4.4 Isolamento
 
-- CONSULTA: API/painel não escrevem em GLPI, Telegram, `arqaux.txt` nem modelo ML.
+- CONSULTA: API/painel não escrevem em GLPI, `arqaux.txt` nem modelo ML.
 - ADMIN: pode redirect de técnico (GLPI + `Tb_Ticket_new`) e gestão de matrícula; **não** dispara jobs do agendador nem re-treino/rollback de modelo pelo painel.
 
 ---
@@ -141,7 +139,6 @@ Ordem: MariaDB → Worker (se produção de atribuição) → API → Frontend.
 
 | Variável | Uso |
 |----------|-----|
-| `TELEGRAM_TOKEN` | Opcional (vazio = sem Telegram) |
 | `SGC_JWT_SECRET` | Obrigatório na API (≥32 chars) |
 | `SGC_AD_DOMAIN` | Domínio AD (ex.: `GRBF`) |
 | `SGC_AUTH_ADMIN_MATRICULAS` | Default `59817` |

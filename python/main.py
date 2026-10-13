@@ -11,7 +11,6 @@ import threading
 from logger import ClLog
 import sys
 import os
-import telegram
 from DbMigracao import ClDbMigracao
 from MLLog import ClMLLog
 from AgendadorSGC import AgendadorSGC
@@ -28,7 +27,6 @@ class Main:
     def __init__(self):
         self.running = True
         self.trade = None
-        self.tel = None
         self.M = None
         self._model_lock = threading.Lock()
         self._model_mtime = 0.0
@@ -205,20 +203,12 @@ class Main:
 
         try:
             # GLPI via conf/glpi.dat (GLPI_API)
-            # Telegram desativado por padrão (sem token / sem notificações)
-            TELEGRAM_TOKEN = (os.getenv("TELEGRAM_TOKEN") or "").strip()
-            DB_CONFIG_FILE = "sgc.dat"
-
             self.trade = ClTrade()
-            #print("[SUCCESS] Conexão com GLPI para o loop principal estabelecida com sucesso.")
-            
-            #print("[DEBUG] Inicializando a classe ClMetodosGenericos...")
             met = ClMetodosGenericos(self.trade)
             ml_log = ClMLLog()
             if not ClDbMigracao().aplicar_migracao_ambiente():
                 print("[AVISO] Migração incompleta. Verifique logs e conf/sgc.dat.")
                 logger.registrarActionLog("MAIN", "AVISO", "MIGRAÇÃO INCOMPLETA")
-            #print("[SUCCESS] Classe ClMetodosGenericos inicializada.")
 
         except Exception as e:
             error_msg = f"ERRO FATAL ao inicializar a aplicação: {e}"
@@ -226,7 +216,6 @@ class Main:
             logger.registarExceptionLog("MAIN", "EXCEPTION", "ERRO NA INICIALIZAÇÃO", e)
             sys.exit()
 
-        #print("[DEBUG] Inicializando a classe de Machine Learning (ClML)...")
         ml = ML.ClML()
         self.M = ml.le_modelo_ml()
         if ML.MODELO_ATIVO.exists():
@@ -245,17 +234,6 @@ class Main:
                 print("[ML] Modelo inicial treinado e carregado com sucesso.")
             else:
                 print("[ML] AVISO: Não foi possível treinar o modelo na inicialização.")
-        #print("[SUCCESS] Classe ClML inicializada e modelo carregado.")
-        
-        self.tel = None
-        if TELEGRAM_TOKEN:
-            self.tel = telegram.ClTelegram(
-                token_robo=TELEGRAM_TOKEN, db_config_file=DB_CONFIG_FILE
-            )
-            print("[TELEGRAM] Notificações habilitadas (TELEGRAM_TOKEN definido).")
-        else:
-            print("[TELEGRAM] Desabilitado — atribuição segue sem notificar.")
-            logger.registrarActionLog("MAIN", "TELEGRAM", "DESABILITADO")
 
         self._iniciar_agendador_background(logger)
 
@@ -499,7 +477,7 @@ class Main:
                                     print(
                                         f"[DB-ACTION] ERRO CRÍTICO: Chamado {CodC} atribuído no GLPI "
                                         f"a '{tecnico_atribuir}', mas INSERT local falhou (2 tentativas). "
-                                        "Carga/Telegram NÃO atualizados. "
+                                        "Carga NÃO atualizada. "
                                         "Verifica_Usuarios tentará backfill."
                                     )
                                     try:
@@ -528,14 +506,6 @@ class Main:
                                     write_heartbeat(last_assigned_id=int(CodC))
                                 except Exception:
                                     pass
-                                if self.tel is not None:
-                                    self.tel.enviar_mensagem_telegram(
-                                        tecnico_atribuir, str(CodC)
-                                    )
-                                    solicitantef = solicitante.replace(" ", ".")
-                                    self.tel.enviar_mensagem_telegram_solicitante(
-                                        solicitantef, str(CodC)
-                                    )
                             else:
                                 logger.registrarActionLog(
                                     "MAIN",

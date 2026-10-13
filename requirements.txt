@@ -1,4 +1,4 @@
-# SGC — dependências da aplicação (MariaDB + ML + GLPI + Telegram + PDF)
+# SGC — dependências da aplicação (MariaDB + ML + GLPI + PDF)
 
 beautifulsoup4>=4.12.0,<5
 certifi>=2025.1.0
@@ -7,9 +7,7 @@ cryptography>=44.0.0
 joblib>=1.4.0
 numpy>=2.2.0,<3
 pandas>=2.2.0,<3
-pillow>=10.0.0
 pymysql>=1.1.0
-pyTelegramBotAPI>=4.27.0
 python-dateutil>=2.9.0
 pytz>=2025.1
 reportlab>=4.2.0,<5

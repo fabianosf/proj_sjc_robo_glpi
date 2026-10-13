@@ -211,7 +211,7 @@ def build() -> Path:
         P(
             "Padronizar a operação do <b>SGC</b>: atribuição automática de chamados no <b>GLPI</b> "
             "e consulta via <b>Control Center</b> (somente leitura). O painel não atribui, "
-            "não altera GLPI/ML e não depende de Telegram.",
+            "não altera GLPI/ML e não usa Telegram.",
             "BodyDoc",
         )
     )
@@ -252,7 +252,7 @@ def build() -> Path:
                 ["Dados", "MariaDB (base SGC)"],
                 [
                     "Integrações",
-                    "GLPI REST · Telegram opcional (desligado sem token)",
+                    "GLPI REST",
                 ],
             ],
             [usable * 0.22, usable * 0.78],
@@ -281,7 +281,7 @@ def build() -> Path:
         "3. Define equipe: DIRETO → FALLBACK_PARCIAL → ML → FALLBACK_CATEGORIA → FALLBACK_N1.",
         "4. Seleciona técnico elegível em <b>Tb_Atrib</b> (Sit=1, horário, menor carga).",
         "5. Atribui no GLPI → só então INSERT local + carga. Falha no INSERT → log crítico, sem carga.",
-        "6. Telegram: somente se <b>TELEGRAM_TOKEN</b> definido; caso contrário, não notifica.",
+        "6. Sem notificação Telegram (feature removida).",
     ]:
         story.append(P(t, "ItemDoc"))
 
@@ -319,7 +319,7 @@ def build() -> Path:
     story.append(P("4.4 Isolamento", "H2Doc"))
     story.append(
         P(
-            "API e painel <b>não</b> escrevem em GLPI, Telegram, arqaux.txt nem modelo ML.",
+            "API e painel <b>não</b> escrevem em GLPI, arqaux.txt nem modelo ML.",
             "BodyDoc",
         )
     )
@@ -355,7 +355,6 @@ def build() -> Path:
         make_table(
             [
                 ["Variável", "Uso"],
-                ["TELEGRAM_TOKEN", "Opcional (vazio = sem Telegram)"],
                 ["SGC_JWT_SECRET", "Obrigatório na API (≥ 32 caracteres)"],
                 ["SGC_AD_DOMAIN", "Domínio AD (ex.: GRBF)"],
                 ["SGC_AUTH_ADMIN_MATRICULAS", "Default: 59817"],

@@ -95,8 +95,17 @@ Inclui: `venv/`, `frontend/node_modules/`, `__pycache__/`, `.env*`, `log/*.log`,
 
 ---
 
-## Próximo passo (opcional — Onda 3)
+## Onda D (2026-10-13) — Telegram + pillow
 
-- Revisar retenção de `Modelo/X.pkl`, `ModeloML_v*.pkl` antigos  
-- `drivers/oracle_linux/` se for só Windows  
-- Deps `pillow` / `pyTelegramBotAPI` após smoke test
+| Item | Resultado |
+|------|-----------|
+| `python/telegram.py` | Removido |
+| Uso em `python/main.py` | Removido (atribuição sem Telegram) |
+| `pyTelegramBotAPI` em `requirements.txt` | Removido |
+| `pillow` em `requirements.txt` | Removido (sem import `PIL`/`Image` no código do app; PDFs usam ReportLab) |
+| Docs/POP/README | Atualizados — Telegram fora de escopo |
+
+## Próximo passo (opcional)
+
+- Revisar retenção de `Modelo/X.pkl`, `ModeloML_v*.pkl` antigos (ver [`retencao.md`](retencao.md))  
+- `drivers/oracle_linux/` se for só Windows

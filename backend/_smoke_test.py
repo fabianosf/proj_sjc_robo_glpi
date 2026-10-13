@@ -16,7 +16,7 @@ import urllib.request
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8001"
 LEAK_RE = re.compile(
-    r"(password|senha|chave\.key|app_token|TELEGRAM|fernet|\"token\"\s*:)",
+    r"(password|senha|chave\.key|app_token|fernet|\"token\"\s*:)",
     re.I,
 )
 results: list[tuple[str, bool, str]] = []

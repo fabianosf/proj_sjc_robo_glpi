@@ -6,7 +6,7 @@
 | **Título** | Procedimento Operacional Padrão — Aplicativo SGC completo |
 | **Versão** | 1.1 |
 | **Data** | 2026-10-03 |
-| **Escopo** | Robô de atribuição, API FastAPI, Frontend Control Center, auth AD, ML, GLPI, MariaDB, Telegram |
+| **Escopo** | Robô de atribuição, API FastAPI, Frontend Control Center, auth AD, ML, GLPI, MariaDB |
 | **Público** | ADMIN (matrícula 59817), time N3, suporte técnico, DevOps |
 | **Owner** | Administrador do painel (matrícula 59817) |
 
@@ -18,6 +18,9 @@ Padronizar instalação, operação, acesso, monitoramento, incidentes e manuten
 
 Este POP é o documento mestre. Em conflito com anotações informais, **vale este POP** (após revisão do owner).
 
+Requisitos formais: [`requisitos.md`](requisitos.md).  
+Retenção de artefatos: [`retencao.md`](retencao.md).
+
 ---
 
 ## 2. Escopo e fora de escopo
@@ -26,7 +29,7 @@ Este POP é o documento mestre. Em conflito com anotações informais, **vale es
 
 | Frente | Descrição |
 |--------|-----------|
-| **Worker (robô)** | Loop de monitoramento, classificação, atribuição GLPI, Telegram, agendador ML |
+| **Worker (robô)** | Loop de monitoramento, classificação, atribuição GLPI, agendador ML |
 | **API (`backend/`)** | FastAPI + autenticação AD; escritas restritas a ADMIN |
 | **Frontend (`frontend/`)** | React Control Center (consulta; ADMIN: técnicos/redirect/matrícula) |
 | **Dados** | MariaDB SGC, `conf/`, `Modelo/`, `log/`, `relatorios/` |
@@ -35,7 +38,7 @@ Este POP é o documento mestre. Em conflito com anotações informais, **vale es
 ### 2.2 Fora de escopo
 
 - Alterar regras de negócio do GLPI fora do SGC
-- Expor `conf/`, `chave.key`, tokens Telegram ou senhas AD
+- Expor `conf/`, `chave.key` ou senhas AD
 - Criar/editar/excluir chamados pela UI — **não existe** (atribuição só pelo worker)
 - Disparar agendador / re-treino / rollback de modelo pela API
 - LDAP Linux / autenticação fora do Windows LogonUser
@@ -68,7 +71,6 @@ Este POP é o documento mestre. Em conflito com anotações informais, **vale es
               │  - varredura Novos          │
               │  - regras + ML              │
               │  - atribui técnico          │
-              │  - Telegram                 │
               │  - AgendadorSGC (ML/PDF)    │
               └──────────────┬──────────────┘
                              │
@@ -102,7 +104,7 @@ Este POP é o documento mestre. Em conflito com anotações informais, **vale es
 | Dados | pandas, pymysql (MariaDB); oracledb opcional |
 | ML | scikit-learn (ComplementNB + TF-IDF), numpy |
 | HTTP | requests (GLPI) |
-| Notificação | Telegram **opcional** (desligado se sem `TELEGRAM_TOKEN`) |
+| Notificação | Internas no painel (`Tb_Notificacao`); Telegram **fora de escopo** |
 | PDF | reportlab |
 | Config | cryptography/Fernet (`conf/*.dat` + `chave.key`) |
 | HTML | beautifulsoup4 |
@@ -180,7 +182,7 @@ Proj_SGC(ROBO)/
 | Operar painel (consulta) | A/R | R | I |
 | Liberar matrícula N3 em `Tb_Atrib.Matricula` | A | C | I |
 | Subir/parar worker e API | A/R | C | R |
-| Credenciais `conf/`, AD, Telegram | A | I | R |
+| Credenciais `conf/`, AD | A | I | R |
 | Alterar `arqaux.txt` / regras | A | C | I |
 | Re-treino / rollback ML | A | C | I |
 | Incidentes produção | A | R | R |
@@ -196,7 +198,7 @@ R = Responsible · A = Accountable · C = Consulted · I = Informed
 1. Python 3.10+
 2. Acesso de rede ao MariaDB e à API GLPI
 3. Pasta `conf/` com `chave.key`, `sgc.dat`, `glpi.dat`
-4. `TELEGRAM_TOKEN` **não é necessário** (Telegram desligado por padrão)
+4. Telegram **não faz parte** do produto
 5. Após clone: executar `setup_env.bat` (Windows) ou `./setup_env.sh` (Linux)
 
 ### 8.2 Máquina da API + painel (Windows)
@@ -329,7 +331,7 @@ Senha AD correta **não** libera quem está fora da allowlist.
 5. Sem elegível → **skip** (fica Novo; sem técnico default). Retry no ciclo; ML/skip 1× por ID/dia.
 6. Atribui no GLPI (Ticket_User + status; falha de vínculo ≠ sucesso).
 7. Persiste ticket (`Dat_Reg`) + incrementa carga; órfão → backfill em Verifica_Usuarios.
-8. Notifica Telegram **somente se** `TELEGRAM_TOKEN` estiver definido (senão pula).
+8. Não notifica via Telegram (feature removida).
 9. Registra decisão em `Tb_ML_Log` (exceto re-skip do mesmo ID no mesmo dia).
 
 ### 11.2 Agendador (background)
@@ -361,7 +363,7 @@ Manual: `sgc_python.bat python\AgendadorSGC.py` ou scripts em `python/`.
 ### 12.1 Princípios
 
 - Leituras de negócio via **GET** (+ auth POST login/logout)
-- CONSULTA não altera GLPI/Telegram/ML/atribuição
+- CONSULTA não altera GLPI/ML/atribuição
 - ADMIN pode redirect de técnico (GLPI+SGC) e sync/edição de matrícula; **não** dispara jobs do agendador
 - Não devolve tokens de `Tb_Atrib`, conteúdo de `conf/` nem senhas
 - CORS: apenas `http://localhost:5173` e `http://127.0.0.1:5173`
@@ -463,7 +465,6 @@ Scripts: pasta `sql/`.
 | `SGC_AGENDADOR_AUTO` | `1` | Liga agendador no main |
 | `SGC_INTERVALO_VARREDURA` | `30` | Segundos entre ciclos |
 | `SGC_MONITOR_HEARTBEAT` | `60` | Heartbeat em log |
-| `TELEGRAM_TOKEN` | — | Opcional; vazio = sem notificação |
 | `ML_RETRAIN_HOUR` | `2` | Hora re-treino |
 | `ML_REPORT_HOUR` | `3` | Hora PDF |
 | `ML_FEEDBACK_MESES` | `6` | Janela treino |
@@ -512,8 +513,6 @@ Scripts: pasta `sql/`.
 | Login 503 AD | pywin32 / DC / `.env` | Instalar deps; rede ao DC |
 | Health database fail | MariaDB / `sgc.dat` | Rede, serviço DB, `conf/` |
 | Chamados não atribuem | Worker parado / GLPI / `arqaux` / técnicos Sit | Subir `run.bat`; logs; `Tb_Atrib` |
-| Telegram (se ligado) | N/A — feature opcional | Ignorar se desabilitado |
-
 | ML ruim | Assertividade / modelo | Relatório; rollback `Modelo/` |
 | Porta 8000/8001 ocupada | Outro processo | `SGC_API_PORT=8001` (ou outra) |
 

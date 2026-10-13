@@ -1,12 +1,8 @@
 # Segurança operacional — segredos SGC
 
-## Telegram
+## Notificações
 
-**Desabilitado por padrão.** O worker sobe sem `TELEGRAM_TOKEN` e **não** envia notificações.
-
-Não é necessário configurar Telegram para operar atribuição GLPI + painel.
-
-Se no futuro quiser reativar: defina `TELEGRAM_TOKEN` no ambiente (nunca hardcode no código).
+Telegram foi **removido** do produto. Atribuição segue sem notificação externa; o painel pode exibir notificações internas (`Tb_Notificacao`) quando configurado.
 
 ## GLPI
 

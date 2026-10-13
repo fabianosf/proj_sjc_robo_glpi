@@ -1,6 +1,6 @@
 # Proj SGC (ROBO)
 
-Robô de **atribuição automática de chamados** integrado ao **GLPI**. Monitora tickets novos, classifica a equipe responsável (regras + Machine Learning), escolhe um técnico elegível, atribui no GLPI, registra na base local e notifica via **Telegram**.
+Robô de **atribuição automática de chamados** integrado ao **GLPI**. Monitora tickets novos, classifica a equipe responsável (regras + Machine Learning), escolhe um técnico elegível, atribui no GLPI e registra na base local. O painel web (API + React) consulta e permite correções ADMIN.
 
 ---
 
@@ -13,8 +13,7 @@ Em resumo, o SGC automatiza o fluxo operacional de triagem:
 3. **Seleciona um técnico** da equipe (carga, elegibilidade, existência no GLPI).
 4. **Atribui o chamado** no GLPI via API REST.
 5. **Grava o ticket** na base local (`Tb_Ticket_new`) e incrementa a carga do técnico.
-6. **Notifica** técnico e solicitante pelo Telegram.
-7. **Aprende continuamente**: importa chamados fechados, detecta correções de equipe, re-treina o modelo e gera relatórios de assertividade.
+6. **Aprende continuamente**: importa chamados fechados, detecta correções de equipe, re-treina o modelo e gera relatórios de assertividade.
 
 Também sincroniza periodicamente o técnico atribuído no GLPI com o registro local (chamados já atribuídos).
 
@@ -39,8 +38,7 @@ GLPI (status Novo)
         │
         ├─ Lista técnicos elegíveis da equipe
         ├─ Atribui no GLPI (primeiro candidato válido)
-        ├─ Persiste + incrementa carga
-        └─ Telegram (técnico + solicitante)
+        └─ Persiste + incrementa carga (notificação no painel, se disponível)
 ```
 
 Em paralelo (thread em background), o **AgendadorSGC** executa tarefas diárias/semanais de aprendizado e relatórios.
@@ -58,7 +56,6 @@ Em paralelo (thread em background), o **AgendadorSGC** executa tarefas diárias/
 | `ML.py` | Treino, inferência, limiares e implantação do modelo |
 | `DAL.py` | Acesso a dados (MariaDB; Oracle opcional) |
 | `CONFIGURACAO.py` | Lê `conf/*.dat` criptografados (Fernet + `chave.key`) |
-| `telegram.py` | Notificações Telegram |
 | `AgendadorSGC.py` / `TarefasML.py` | Re-treino, correções e PDFs agendados |
 | `logger.py` | Logs diários em `log/` |
 
@@ -107,7 +104,6 @@ Proj_SGC(ROBO)/
   - `chave.key` — chave Fernet
   - `sgc.dat` — conexão com o banco
   - `glpi.dat` — conexão com o GLPI
-- Token do bot Telegram (**opcional** — se ausente, o robô atribui sem notificar)
 
 ---
 
@@ -202,7 +198,6 @@ sgc_python.bat python\AgendadorSGC.py
 | `SGC_AGENDADOR_AUTO` | `1` | Liga/desliga agendador no `main` |
 | `SGC_INTERVALO_VARREDURA` | `30` | Segundos entre ciclos de monitoramento |
 | `SGC_MONITOR_HEARTBEAT` | `60` | Intervalo de heartbeat nos logs |
-| `TELEGRAM_TOKEN` | — | Opcional. Se vazio, o worker **não** notifica (Telegram desligado) |
 | `ML_RETRAIN_HOUR` | `2` | Hora do re-treino |
 | `ML_REPORT_HOUR` | `3` | Hora do PDF de assertividade |
 | `ML_FEEDBACK_MESES` | `6` | Janela de feedback para treino |
@@ -253,7 +248,6 @@ Definidas em `requirements.txt`:
 - **pandas**, **scikit-learn**, **numpy** — ML e dados
 - **pymysql** — MariaDB (`oracledb` opcional)
 - **requests** — API GLPI
-- **pyTelegramBotAPI** — Telegram
 - **reportlab** — PDFs
 - **cryptography** — configs criptografadas
 - **beautifulsoup4** — limpeza de HTML das descrições

@@ -1,7 +1,7 @@
 # SGC Control Center (frontend)
 
 Painel React somente leitura que consome a **API FastAPI** (`backend/`).  
-Não acessa GLPI, MariaDB, Telegram, `conf/`, modelos ML nem código Python.
+Não acessa GLPI, MariaDB, `conf/`, modelos ML nem código Python.
 
 ## Stack
 

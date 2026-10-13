@@ -118,7 +118,7 @@ Login: **matrícula** (ou login AD mapeado) + senha Windows.
 
 ## 5. Observações
 
-- Telegram opcional (sem `TELEGRAM_TOKEN` = não notifica).
+- Telegram removido do produto (atribuição sem notificação externa).
 - Não versionar `conf\`, `backend\.env`, dumps SQL.
 - Atualização: novo `build_windows_pkg.bat` → substitua código; **preserve** `conf\`, `backend\.env` e, se quiser, `venv\` (ou rode `setup_producao.bat` de novo).
 - Acesso pela LAN (outro notebook abrindo o painel): use IP do host, `SGC_API_HOST=0.0.0.0` e `SGC_CORS_ORIGINS` conforme `run_mobile.bat` / docs mobile.

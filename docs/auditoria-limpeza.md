@@ -121,8 +121,8 @@ Legenda:
 | B8 | `conf/*.bak*`, `glpi7.dat`, `glpiH.dat`, `glpi_homolo.dat`, `glpi.dat.prod_mariadb` | Backups/variantes de config criptografada | **Nunca apagar sem inventário**; risco operacional alto |
 | B9 | Versões antigas em `Modelo/ModeloML_v*.pkl`, `ModeloML_test_backup.pkl` | Versionamento/`ClModelVersionamento`; ativo é `ModeloML.pkl` | Rollback de modelo pode depender delas |
 | B10 | `log/*.log`, `relatorios/*` | Saídas de runtime do worker/API/agendador | Dados operacionais — política de retenção, não delete automático |
-| B11 | `pyTelegramBotAPI` em `requirements.txt` | `telegram.py` usa **`requests`**, não `telebot` | Remover dep pode ser OK, mas validar ambientes que importem telebot fora do repo |
-| B12 | `pillow` em `requirements.txt` | Nenhum `PIL`/`Image` no código do projeto | Pode ser uso opcional do ReportLab; validar PDF antes de remover |
+| B11 | `pyTelegramBotAPI` | **Removido na Onda D (2026-10-13)** com `telegram.py` |
+| B12 | `pillow` | **Removido na Onda D (2026-10-13)** — sem `PIL` no app; PDF via ReportLab |
 | B13 | `httpx` instalado no `venv` (não está em `requirements-api.txt`) | Usado só para `TestClient` ad hoc | Não versionado; limpar venv é opcional (`pip uninstall httpx`) |
 | B14 | `frontend/dist/` | Build gerado; já em `frontend/.gitignore` | Regenerável com `npm run build` |
 

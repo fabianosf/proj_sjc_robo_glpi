@@ -44,7 +44,7 @@ def main():
 
     try:
         import requests  # noqa: F401
-        _ok("requests (GLPI/Telegram)")
+        _ok("requests (GLPI)")
     except ImportError:
         _erro("requests ausente — pip install requests")
         erros += 1

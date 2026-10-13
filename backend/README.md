@@ -113,6 +113,7 @@ venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0
 
 - API: http://127.0.0.1:8000 (ou `SGC_API_PORT`)  
 - Swagger: http://127.0.0.1:8000/docs  
+- Contrato OpenAPI versionado: [`docs/openapi-sgc.yaml`](../docs/openapi-sgc.yaml) (exportado das rotas FastAPI atuais)
 
 O worker continua sendo iniciado à parte com `run.bat`.
 
@@ -145,5 +146,5 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/v1/tickets?page=1&page_size=5"
 ## Segurança
 
 - Bind padrão em `127.0.0.1` (não expõe a rede).
-- Respostas não incluem `conf/`, `chave.key`, senhas, `TELEGRAM_TOKEN` nem coluna `token` de `Tb_Atrib`.
+- Respostas não incluem `conf/`, `chave.key`, senhas nem coluna `token` de `Tb_Atrib`.
 - Apenas métodos GET no CORS.
