@@ -1,0 +1,2991 @@
+openapi: 3.1.0
+info:
+  title: SGC API
+  description: 'API do painel web do SGC: leituras operacionais para perfis autorizados;
+    escritas delimitadas a ADMIN (técnicos, redirect GLPI, matrícula, regras). Isolada
+    do worker de atribuição. Rotas /api/v1 exigem JWT (exceto /api/v1/auth/login).'
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      tags:
+      - health
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/auth/login:
+    post:
+      tags:
+      - auth
+      summary: Login
+      operationId: login_api_v1_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/logout:
+    post:
+      tags:
+      - auth
+      summary: Logout
+      operationId: logout_api_v1_auth_logout_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+      security:
+      - HTTPBearer: []
+  /api/v1/auth/me:
+    get:
+      tags:
+      - auth
+      summary: Me
+      operationId: me_api_v1_auth_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublic'
+      security:
+      - HTTPBearer: []
+  /api/v1/dashboard/summary:
+    get:
+      tags:
+      - api-v1
+      summary: Dashboard Summary
+      operationId: dashboard_summary_api_v1_dashboard_summary_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+      security:
+      - HTTPBearer: []
+  /api/v1/tickets:
+    get:
+      tags:
+      - api-v1
+      summary: Tickets
+      operationId: tickets_api_v1_tickets_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          description: Página (>= 1)
+          default: 1
+          title: Page
+        description: Página (>= 1)
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Itens por página (1–100)
+          default: 20
+          title: Page Size
+        description: Itens por página (1–100)
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Search
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTickets'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/glpi:
+    get:
+      tags:
+      - api-v1
+      summary: Tickets Glpi
+      description: Chamados ativos do GLPI (status=notold) — mesma busca do front
+        ticket.php.
+      operationId: tickets_glpi_api_v1_tickets_glpi_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Page Size
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Search
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTickets'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/{ticket_id}:
+    get:
+      tags:
+      - api-v1
+      summary: Ticket Detail
+      operationId: ticket_detail_api_v1_tickets__ticket_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Ticket Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/{ticket_id}/glpi-hint:
+    get:
+      tags:
+      - api-v1
+      summary: Ticket Glpi Hint
+      description: 'Quando o chamado não está no SGC: consulta GLPI (só leitura) para
+        explicar atribuição.'
+      operationId: ticket_glpi_hint_api_v1_tickets__ticket_id__glpi_hint_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Ticket Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketGlpiHint'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/tickets/{ticket_id}/reassign:
+    post:
+      tags:
+      - api-v1
+      summary: Reassign Ticket Route
+      description: 'ADMIN: envia um chamado para outra fila (equipe) ou para uma pessoa.'
+      operationId: reassign_ticket_route_api_v1_tickets__ticket_id__reassign_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: ticket_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Ticket Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketReassign'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketReassignResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/teams:
+    get:
+      tags:
+      - api-v1
+      summary: Teams
+      operationId: teams_api_v1_teams_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TeamItem'
+                type: array
+                title: Response Teams Api V1 Teams Get
+      security:
+      - HTTPBearer: []
+  /api/v1/teams/guide:
+    get:
+      tags:
+      - api-v1
+      summary: Teams Guide
+      description: O que cada fila faz (resumo + exemplos do arqaux) para ajudar no
+        redirect.
+      operationId: teams_guide_api_v1_teams_guide_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TeamGuideItem'
+                type: array
+                title: Response Teams Guide Api V1 Teams Guide Get
+      security:
+      - HTTPBearer: []
+  /api/v1/technicians:
+    get:
+      tags:
+      - api-v1
+      summary: Technicians
+      operationId: technicians_api_v1_technicians_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/TechnicianItem'
+                type: array
+                title: Response Technicians Api V1 Technicians Get
+      security:
+      - HTTPBearer: []
+  /api/v1/technicians/{usuario}:
+    patch:
+      tags:
+      - api-v1
+      summary: Patch Technician
+      description: Atualiza equipe/situação/matrícula (e horário/empresa) em Tb_Atrib.
+        Somente ADMIN.
+      operationId: patch_technician_api_v1_technicians__usuario__patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: usuario
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnicianUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnicianItem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/technicians/redirect:
+    post:
+      tags:
+      - api-v1
+      summary: Redirect Technician Route
+      description: 'Redireciona login de atribuição: move tickets locais, notifica
+        destino e opcionalmente desativa origem.'
+      operationId: redirect_technician_route_api_v1_technicians_redirect_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnicianRedirect'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnicianRedirectResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/technicians/sync-matriculas:
+    post:
+      tags:
+      - api-v1
+      summary: Sync Matriculas Route
+      description: 'Sincroniza matrículas: Oracle Globus → GLPI (nome exato) → AD
+        → mapa .env.'
+      operationId: sync_matriculas_route_api_v1_technicians_sync_matriculas_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatriculaSyncResult'
+      security:
+      - HTTPBearer: []
+  /api/v1/technicians/import-matriculas:
+    post:
+      tags:
+      - api-v1
+      summary: Import Matriculas Route
+      description: Importa CSV usuario;matricula (ou vírgula) para Tb_Atrib.Matricula.
+        Somente ADMIN.
+      operationId: import_matriculas_route_api_v1_technicians_import_matriculas_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatriculaImportBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatriculaImportResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/rules:
+    get:
+      tags:
+      - api-v1
+      summary: Get Rules
+      description: Lista regras palavra-chave → equipe [@técnico] do arqaux.txt.
+      operationId: get_rules_api_v1_rules_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RuleItem'
+                type: array
+                title: Response Get Rules Api V1 Rules Get
+      security:
+      - HTTPBearer: []
+    put:
+      tags:
+      - api-v1
+      summary: Put Rules
+      description: Substitui arqaux.txt (com backup .bak). Ordem da lista = prioridade
+        DIRETO.
+      operationId: put_rules_api_v1_rules_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RulesPutBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RuleItem'
+                type: array
+                title: Response Put Rules Api V1 Rules Put
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/ml/overview:
+    get:
+      tags:
+      - api-v1
+      summary: Ml Overview
+      operationId: ml_overview_api_v1_ml_overview_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MlOverview'
+      security:
+      - HTTPBearer: []
+  /api/v1/ml/model-status:
+    get:
+      tags:
+      - api-v1
+      summary: Ml Model Status
+      operationId: ml_model_status_api_v1_ml_model_status_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MlModelStatus'
+      security:
+      - HTTPBearer: []
+  /api/v1/ml/corrections:
+    get:
+      tags:
+      - api-v1
+      summary: Ml Corrections
+      operationId: ml_corrections_api_v1_ml_corrections_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Page Size
+      - name: equipe_sgc
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 5
+          - type: 'null'
+          title: Equipe Sgc
+      - name: equipe_correta
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 5
+          - type: 'null'
+          title: Equipe Correta
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMlCorrections'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/ml/accuracy-by-method:
+    get:
+      tags:
+      - api-v1
+      summary: Ml Accuracy
+      operationId: ml_accuracy_api_v1_ml_accuracy_by_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MlAccuracyReport'
+      security:
+      - HTTPBearer: []
+  /api/v1/ml/logs:
+    get:
+      tags:
+      - api-v1
+      summary: Ml Logs
+      operationId: ml_logs_api_v1_ml_logs_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Page Size
+      - name: metodo
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 24
+          - type: 'null'
+          title: Metodo
+      - name: equipe
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 5
+          - type: 'null'
+          title: Equipe
+      - name: rejeitados
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Rejeitados
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Search
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMlLogs'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/ml/simulate:
+    post:
+      tags:
+      - api-v1
+      summary: Ml Simulate
+      operationId: ml_simulate_api_v1_ml_simulate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MlSimulateBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MlSimulateResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/jobs:
+    get:
+      tags:
+      - api-v1
+      summary: Jobs
+      operationId: jobs_api_v1_jobs_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobsOverview'
+      security:
+      - HTTPBearer: []
+  /api/v1/reports/ops:
+    get:
+      tags:
+      - api-v1
+      summary: Ops Period Report
+      operationId: ops_period_report_api_v1_reports_ops_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: day | week | month | custom
+          default: week
+          title: Period
+        description: day | week | month | custom
+      - name: date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Data de referência YYYY-MM-DD (dia / qualquer dia da semana
+            / mês).
+          title: Date
+        description: Data de referência YYYY-MM-DD (dia / qualquer dia da semana /
+          mês).
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Início do intervalo YYYY-MM-DD (com date_to ou period=custom).
+          title: Date From
+        description: Início do intervalo YYYY-MM-DD (com date_to ou period=custom).
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Fim do intervalo YYYY-MM-DD (inclusivo).
+          title: Date To
+        description: Fim do intervalo YYYY-MM-DD (inclusivo).
+      - name: equipes
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'CSV de equipes (ex.: N1,N2,N3,DEV). Vazio = default + outras
+            com movimento.'
+          title: Equipes
+        description: 'CSV de equipes (ex.: N1,N2,N3,DEV). Vazio = default + outras
+          com movimento.'
+      - name: tecnico
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 40
+          - type: 'null'
+          description: Login do técnico (filtra relatório para uma pessoa).
+          title: Tecnico
+        description: Login do técnico (filtra relatório para uma pessoa).
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsPeriodReport'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/reports/ops.pdf:
+    get:
+      tags:
+      - api-v1
+      summary: Ops Period Report Pdf
+      operationId: ops_period_report_pdf_api_v1_reports_ops_pdf_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          description: day | week | month | custom
+          default: week
+          title: Period
+        description: day | week | month | custom
+      - name: date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Data de referência YYYY-MM-DD (dia / qualquer dia da semana
+            / mês).
+          title: Date
+        description: Data de referência YYYY-MM-DD (dia / qualquer dia da semana /
+          mês).
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Início do intervalo YYYY-MM-DD (com date_to ou period=custom).
+          title: Date From
+        description: Início do intervalo YYYY-MM-DD (com date_to ou period=custom).
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Fim do intervalo YYYY-MM-DD (inclusivo).
+          title: Date To
+        description: Fim do intervalo YYYY-MM-DD (inclusivo).
+      - name: equipes
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'CSV de equipes (ex.: N1,N2,N3,DEV). Vazio = default + outras
+            com movimento.'
+          title: Equipes
+        description: 'CSV de equipes (ex.: N1,N2,N3,DEV). Vazio = default + outras
+          com movimento.'
+      - name: tecnico
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 40
+          - type: 'null'
+          description: Login do técnico (filtra relatório para uma pessoa).
+          title: Tecnico
+        description: Login do técnico (filtra relatório para uma pessoa).
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/reports/ops.csv:
+    get:
+      tags:
+      - api-v1
+      summary: Ops Period Report Csv
+      operationId: ops_period_report_csv_api_v1_reports_ops_csv_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          default: week
+          title: Period
+      - name: date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date From
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Date To
+      - name: equipes
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipes
+      - name: tecnico
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 40
+          - type: 'null'
+          title: Tecnico
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/reports/assertividade:
+    get:
+      tags:
+      - api-v1
+      summary: Assertividade Pdfs
+      operationId: assertividade_pdfs_api_v1_reports_assertividade_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AssertividadePdfItem'
+                type: array
+                title: Response Assertividade Pdfs Api V1 Reports Assertividade Get
+      security:
+      - HTTPBearer: []
+  /api/v1/reports/assertividade/{filename}:
+    get:
+      tags:
+      - api-v1
+      summary: Assertividade Pdf Download
+      operationId: assertividade_pdf_download_api_v1_reports_assertividade__filename__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Filename
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/reports/weekly-teams:
+    get:
+      tags:
+      - api-v1
+      summary: Weekly Teams Report
+      operationId: weekly_teams_report_api_v1_reports_weekly_teams_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: week_start
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Qualquer data da semana (YYYY-MM-DD); usa a segunda-feira da
+            semana.
+          title: Week Start
+        description: Qualquer data da semana (YYYY-MM-DD); usa a segunda-feira da
+          semana.
+      - name: equipes
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'CSV de equipes (ex.: N1,N2,N3,DEV). Default: N1,N2,N3,DEV
+            + outras com movimento.'
+          title: Equipes
+        description: 'CSV de equipes (ex.: N1,N2,N3,DEV). Default: N1,N2,N3,DEV +
+          outras com movimento.'
+      - name: tecnico
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 40
+          - type: 'null'
+          title: Tecnico
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyTeamReport'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/notifications:
+    get:
+      tags:
+      - api-v1
+      summary: Notifications List
+      operationId: notifications_list_api_v1_notifications_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: unread_only
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Unread Only
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 30
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/notifications/unread-count:
+    get:
+      tags:
+      - api-v1
+      summary: Notifications Unread
+      operationId: notifications_unread_api_v1_notifications_unread_count_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationUnreadCount'
+      security:
+      - HTTPBearer: []
+  /api/v1/notifications/{notif_id}/read:
+    post:
+      tags:
+      - api-v1
+      summary: Notification Mark Read
+      operationId: notification_mark_read_api_v1_notifications__notif_id__read_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: notif_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Notif Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationItem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/notifications/read-all:
+    post:
+      tags:
+      - api-v1
+      summary: Notifications Read All
+      operationId: notifications_read_all_api_v1_notifications_read_all_post
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationUnreadCount'
+      security:
+      - HTTPBearer: []
+components:
+  schemas:
+    AssertividadePdfItem:
+      properties:
+        filename:
+          type: string
+          title: Filename
+        size:
+          type: integer
+          title: Size
+          default: 0
+        modified:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Modified
+      type: object
+      required:
+      - filename
+      title: AssertividadePdfItem
+    AssignmentExplanation:
+      properties:
+        metodo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Metodo
+        metodo_label:
+          type: string
+          title: Metodo Label
+          default: ''
+        equipe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe
+        tecnico:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tecnico
+        keywords_matched:
+          items:
+            type: string
+          type: array
+          title: Keywords Matched
+        motivo_resumo:
+          type: string
+          title: Motivo Resumo
+          default: ''
+        motivo_pessoa:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Motivo Pessoa
+        equipe_2a:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe 2A
+        confianca:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Confianca
+        motivo_rejeicao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Motivo Rejeicao
+      type: object
+      title: AssignmentExplanation
+      description: 'Texto claro: por que este chamado foi para esta equipe/pessoa.'
+    DailySeriesItem:
+      properties:
+        data:
+          type: string
+          title: Data
+        atribuidos:
+          type: integer
+          title: Atribuidos
+          default: 0
+        fechados:
+          type: integer
+          title: Fechados
+          default: 0
+      type: object
+      required:
+      - data
+      title: DailySeriesItem
+    DashboardSummary:
+      properties:
+        tickets_total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Tickets Total
+        tickets_today:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Tickets Today
+        technicians_active:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Technicians Active
+        teams_total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Teams Total
+        ml_log_total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Ml Log Total
+        corrections_total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Corrections Total
+        feedback_total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Feedback Total
+        latest_performance:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Latest Performance
+        latest_performance_date:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Latest Performance Date
+        tickets_by_team:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Tickets By Team
+        tickets_today_by_team:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Tickets Today By Team
+        ml_by_method:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Ml By Method
+        glpi_novos:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Glpi Novos
+        skips_sem_tecnico_hoje:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Skips Sem Tecnico Hoje
+        worker_updated_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Worker Updated At
+        worker_age_seconds:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Worker Age Seconds
+        worker_alive:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Worker Alive
+        worker_glpi_ok:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Worker Glpi Ok
+        worker_last_error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Worker Last Error
+        last_assigned_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Last Assigned Id
+        last_assigned_in_sgc:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Last Assigned In Sgc
+        last_skip_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Last Skip Id
+        last_skip_in_sgc:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Last Skip In Sgc
+      type: object
+      title: DashboardSummary
+    ErrorPairItem:
+      properties:
+        equipe_sgc:
+          type: string
+          title: Equipe Sgc
+        equipe_correta:
+          type: string
+          title: Equipe Correta
+        quantidade:
+          type: integer
+          title: Quantidade
+          default: 0
+      type: object
+      required:
+      - equipe_sgc
+      - equipe_correta
+      title: ErrorPairItem
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HealthResponse:
+      properties:
+        status:
+          type: string
+          title: Status
+        database:
+          type: string
+          title: Database
+        version:
+          type: string
+          title: Version
+        worker_updated_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Worker Updated At
+        worker_age_seconds:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Worker Age Seconds
+        worker_alive:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Worker Alive
+        worker_glpi_ok:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Worker Glpi Ok
+        worker_last_error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Worker Last Error
+      type: object
+      required:
+      - status
+      - database
+      - version
+      title: HealthResponse
+    JobItem:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        description:
+          type: string
+          title: Description
+        schedule:
+          type: string
+          title: Schedule
+        enabled:
+          type: boolean
+          title: Enabled
+        process_alive:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Process Alive
+        agenda_enabled:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Agenda Enabled
+        source:
+          type: string
+          title: Source
+          default: agendador_sgc
+        last_run_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Run At
+        last_ok:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Last Ok
+        last_message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Message
+        next_run_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Run At
+      type: object
+      required:
+      - id
+      - name
+      - description
+      - schedule
+      - enabled
+      title: JobItem
+    JobsOverview:
+      properties:
+        worker_alive:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Worker Alive
+        scheduler_alive:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Scheduler Alive
+        scheduler_enabled:
+          type: boolean
+          title: Scheduler Enabled
+          default: true
+        worker_updated_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Worker Updated At
+        scheduler_updated_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scheduler Updated At
+        jobs:
+          items:
+            $ref: '#/components/schemas/JobItem'
+          type: array
+          title: Jobs
+      type: object
+      title: JobsOverview
+    LoginRequest:
+      properties:
+        username:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Username
+        password:
+          type: string
+          maxLength: 200
+          minLength: 1
+          title: Password
+      type: object
+      required:
+      - username
+      - password
+      title: LoginRequest
+    MatriculaImportBody:
+      properties:
+        content:
+          type: string
+          maxLength: 500000
+          minLength: 1
+          title: Content
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      title: MatriculaImportBody
+      description: 'Texto CSV: uma linha por técnico (usuario;matricula ou usuario,matricula).'
+    MatriculaImportResult:
+      properties:
+        updated:
+          type: integer
+          title: Updated
+          default: 0
+        not_found:
+          type: integer
+          title: Not Found
+          default: 0
+        invalid:
+          type: integer
+          title: Invalid
+          default: 0
+        details:
+          items:
+            type: string
+          type: array
+          title: Details
+      type: object
+      title: MatriculaImportResult
+    MatriculaSyncResult:
+      properties:
+        updated:
+          type: integer
+          title: Updated
+          default: 0
+        skipped:
+          type: integer
+          title: Skipped
+          default: 0
+        from_oracle:
+          type: integer
+          title: From Oracle
+          default: 0
+        from_glpi:
+          type: integer
+          title: From Glpi
+          default: 0
+        from_ad:
+          type: integer
+          title: From Ad
+          default: 0
+        from_map:
+          type: integer
+          title: From Map
+          default: 0
+        details:
+          items:
+            type: string
+          type: array
+          title: Details
+      type: object
+      title: MatriculaSyncResult
+    MessageResponse:
+      properties:
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+      - detail
+      title: MessageResponse
+    MethodAccuracyItem:
+      properties:
+        metodo:
+          type: string
+          title: Metodo
+        avaliados:
+          type: integer
+          title: Avaliados
+          default: 0
+        acertos:
+          type: integer
+          title: Acertos
+          default: 0
+        erros:
+          type: integer
+          title: Erros
+          default: 0
+        taxa_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Taxa Pct
+      type: object
+      required:
+      - metodo
+      title: MethodAccuracyItem
+    MlAccuracyReport:
+      properties:
+        avaliados:
+          type: integer
+          title: Avaliados
+          default: 0
+        acertos:
+          type: integer
+          title: Acertos
+          default: 0
+        erros:
+          type: integer
+          title: Erros
+          default: 0
+        taxa_pct:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Taxa Pct
+        by_method:
+          items:
+            $ref: '#/components/schemas/MethodAccuracyItem'
+          type: array
+          title: By Method
+        error_pairs:
+          items:
+            $ref: '#/components/schemas/ErrorPairItem'
+          type: array
+          title: Error Pairs
+      type: object
+      title: MlAccuracyReport
+    MlCorrectionItem:
+      properties:
+        idcor:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Idcor
+        id_glpi:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Id Glpi
+        titulo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Titulo
+        categoria:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoria
+        equipe_sgc:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe Sgc
+        equipe_correta:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe Correta
+        tecnico_fechamento:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tecnico Fechamento
+        data_deteccao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Deteccao
+      type: object
+      title: MlCorrectionItem
+    MlLogEntry:
+      properties:
+        idml:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Idml
+        id_glpi:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Id Glpi
+        metodo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Metodo
+        equipe_prevista:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe Prevista
+        equipe_ml:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe Ml
+        equipe_2a:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe 2A
+        confianca:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Confianca
+        margem:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Margem
+        motivo_rejeicao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Motivo Rejeicao
+        motivo_atrib:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Motivo Atrib
+        categoria:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoria
+        localizacao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Localizacao
+        data_registro:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Registro
+      type: object
+      title: MlLogEntry
+      description: Contrato normalizado (snake_case) para Tb_ML_Log.
+    MlModelStatus:
+      properties:
+        model_exists:
+          type: boolean
+          title: Model Exists
+          default: false
+        model_mtime:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Model Mtime
+        model_size:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Model Size
+        ativo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ativo
+        f1_macro:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: F1 Macro
+        version:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Version
+        train_samples:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Train Samples
+        implantado_em:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Implantado Em
+        versoes:
+          items:
+            $ref: '#/components/schemas/MlModelVersionItem'
+          type: array
+          title: Versoes
+      type: object
+      title: MlModelStatus
+      description: 'Somente leitura: ModeloML.pkl + metrics.json. Sem treino nem rollback.'
+    MlModelVersionItem:
+      properties:
+        arquivo:
+          type: string
+          title: Arquivo
+        data:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data
+        f1_macro:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: F1 Macro
+        version:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Version
+        train_samples:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Train Samples
+      type: object
+      required:
+      - arquivo
+      title: MlModelVersionItem
+    MlOverview:
+      properties:
+        total_logs:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Total Logs
+        by_method:
+          additionalProperties:
+            type: integer
+          type: object
+          title: By Method
+        avg_confidence:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avg Confidence
+        avg_margin:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Avg Margin
+        recent:
+          items:
+            $ref: '#/components/schemas/MlLogEntry'
+          type: array
+          title: Recent
+      type: object
+      title: MlOverview
+    MlSimulateBody:
+      properties:
+        titulo:
+          type: string
+          maxLength: 500
+          minLength: 1
+          title: Titulo
+        categoria:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Categoria
+        descricao:
+          anyOf:
+          - type: string
+            maxLength: 4000
+          - type: 'null'
+          title: Descricao
+        localizacao:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Localizacao
+      additionalProperties: false
+      type: object
+      required:
+      - titulo
+      title: MlSimulateBody
+    MlSimulateResult:
+      properties:
+        equipe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe
+        metodo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Metodo
+        equipe_ml:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe Ml
+        equipe_2a:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe 2A
+        confianca:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Confianca
+        margem:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Margem
+        motivo_rejeicao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Motivo Rejeicao
+        tecnico_fixo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tecnico Fixo
+        tecnicos_elegiveis:
+          items:
+            type: string
+          type: array
+          title: Tecnicos Elegiveis
+        modelo_carregado:
+          type: boolean
+          title: Modelo Carregado
+          default: false
+      type: object
+      title: MlSimulateResult
+    NameCountItem:
+      properties:
+        nome:
+          type: string
+          title: Nome
+        qtd:
+          type: integer
+          title: Qtd
+          default: 0
+      type: object
+      required:
+      - nome
+      title: NameCountItem
+    NotificationItem:
+      properties:
+        id:
+          type: integer
+          title: Id
+        tipo:
+          type: string
+          title: Tipo
+        titulo:
+          type: string
+          title: Titulo
+        mensagem:
+          type: string
+          title: Mensagem
+        ref_ids:
+          items:
+            type: integer
+          type: array
+          title: Ref Ids
+        lida:
+          type: boolean
+          title: Lida
+          default: false
+        criado_por:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Criado Por
+        criado_em:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Criado Em
+      type: object
+      required:
+      - id
+      - tipo
+      - titulo
+      - mensagem
+      title: NotificationItem
+    NotificationList:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/NotificationItem'
+          type: array
+          title: Items
+        unread:
+          type: integer
+          title: Unread
+          default: 0
+      type: object
+      required:
+      - items
+      title: NotificationList
+    NotificationUnreadCount:
+      properties:
+        unread:
+          type: integer
+          title: Unread
+          default: 0
+      type: object
+      title: NotificationUnreadCount
+    OpsPeriodComparison:
+      properties:
+        period_start:
+          type: string
+          title: Period Start
+        period_end:
+          type: string
+          title: Period End
+        label:
+          type: string
+          title: Label
+        atribuidos:
+          type: integer
+          title: Atribuidos
+          default: 0
+        fechados:
+          type: integer
+          title: Fechados
+          default: 0
+        tempo_medio_horas:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tempo Medio Horas
+      type: object
+      required:
+      - period_start
+      - period_end
+      - label
+      title: OpsPeriodComparison
+      description: Totais do intervalo imediatamente anterior (mesmo número de dias).
+    OpsPeriodReport:
+      properties:
+        period:
+          type: string
+          enum:
+          - day
+          - week
+          - month
+          - custom
+          title: Period
+        period_start:
+          type: string
+          title: Period Start
+        period_end:
+          type: string
+          title: Period End
+        label:
+          type: string
+          title: Label
+        focus_teams:
+          items:
+            type: string
+          type: array
+          title: Focus Teams
+        filtro_tecnico:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Filtro Tecnico
+        teams:
+          items:
+            $ref: '#/components/schemas/WeeklyTeamStats'
+          type: array
+          title: Teams
+        totals:
+          $ref: '#/components/schemas/WeeklyTeamStats'
+        rank_fechou_mais:
+          items:
+            $ref: '#/components/schemas/RankPersonItem'
+          type: array
+          title: Rank Fechou Mais
+        rank_fechou_menos:
+          items:
+            $ref: '#/components/schemas/RankPersonItem'
+          type: array
+          title: Rank Fechou Menos
+        top_solicitantes:
+          items:
+            $ref: '#/components/schemas/NameCountItem'
+          type: array
+          title: Top Solicitantes
+        top_localizacoes:
+          items:
+            $ref: '#/components/schemas/NameCountItem'
+          type: array
+          title: Top Localizacoes
+        notes:
+          items:
+            type: string
+          type: array
+          title: Notes
+        comparacao:
+          anyOf:
+          - $ref: '#/components/schemas/OpsPeriodComparison'
+          - type: 'null'
+        serie_diaria:
+          items:
+            $ref: '#/components/schemas/DailySeriesItem'
+          type: array
+          title: Serie Diaria
+        tempo_faixas:
+          items:
+            $ref: '#/components/schemas/TempoFaixaItem'
+          type: array
+          title: Tempo Faixas
+        week_start:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Week Start
+        week_end:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Week End
+      type: object
+      required:
+      - period
+      - period_start
+      - period_end
+      - label
+      - totals
+      title: OpsPeriodReport
+    PaginatedMlCorrections:
+      properties:
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+        total:
+          type: integer
+          title: Total
+        items:
+          items:
+            $ref: '#/components/schemas/MlCorrectionItem'
+          type: array
+          title: Items
+      type: object
+      required:
+      - page
+      - page_size
+      - total
+      - items
+      title: PaginatedMlCorrections
+    PaginatedMlLogs:
+      properties:
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+        total:
+          type: integer
+          title: Total
+        items:
+          items:
+            $ref: '#/components/schemas/MlLogEntry'
+          type: array
+          title: Items
+      type: object
+      required:
+      - page
+      - page_size
+      - total
+      - items
+      title: PaginatedMlLogs
+    PaginatedTickets:
+      properties:
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+        total:
+          type: integer
+          title: Total
+        items:
+          items:
+            $ref: '#/components/schemas/TicketListItem'
+          type: array
+          title: Items
+        fonte:
+          anyOf:
+          - type: string
+            enum:
+            - sgc
+            - glpi
+          - type: 'null'
+          title: Fonte
+      type: object
+      required:
+      - page
+      - page_size
+      - total
+      - items
+      title: PaginatedTickets
+    RankPersonItem:
+      properties:
+        tecnico:
+          type: string
+          title: Tecnico
+        equipe:
+          type: string
+          title: Equipe
+        matricula:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Matricula
+        fechados:
+          type: integer
+          title: Fechados
+          default: 0
+        atribuidos:
+          type: integer
+          title: Atribuidos
+          default: 0
+        tempo_medio_horas:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tempo Medio Horas
+      type: object
+      required:
+      - tecnico
+      - equipe
+      title: RankPersonItem
+    RuleItem:
+      properties:
+        equipe:
+          type: string
+          maxLength: 5
+          minLength: 1
+          title: Equipe
+        keywords:
+          items:
+            type: string
+          type: array
+          minItems: 1
+          title: Keywords
+        tecnico:
+          anyOf:
+          - type: string
+            maxLength: 40
+          - type: 'null'
+          title: Tecnico
+      additionalProperties: false
+      type: object
+      required:
+      - equipe
+      - keywords
+      title: RuleItem
+    RulesPutBody:
+      properties:
+        rules:
+          items:
+            $ref: '#/components/schemas/RuleItem'
+          type: array
+          title: Rules
+      additionalProperties: false
+      type: object
+      required:
+      - rules
+      title: RulesPutBody
+    TeamGuideItem:
+      properties:
+        equipe:
+          type: string
+          title: Equipe
+        resumo:
+          type: string
+          title: Resumo
+        exemplos:
+          items:
+            type: string
+          type: array
+          title: Exemplos
+        tecnicos_ativos:
+          type: integer
+          title: Tecnicos Ativos
+          default: 0
+        technicians_total:
+          type: integer
+          title: Technicians Total
+          default: 0
+        carga_total:
+          type: integer
+          title: Carga Total
+          default: 0
+      type: object
+      required:
+      - equipe
+      - resumo
+      title: TeamGuideItem
+    TeamItem:
+      properties:
+        equipe:
+          type: string
+          title: Equipe
+        technicians_total:
+          type: integer
+          title: Technicians Total
+        technicians_active:
+          type: integer
+          title: Technicians Active
+        carga_total:
+          type: integer
+          title: Carga Total
+      type: object
+      required:
+      - equipe
+      - technicians_total
+      - technicians_active
+      - carga_total
+      title: TeamItem
+    TechnicianItem:
+      properties:
+        usuario:
+          type: string
+          title: Usuario
+        equipe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe
+        qtdc:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Qtdc
+        sit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sit
+        h1:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: H1
+        h2:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: H2
+        empresa:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Empresa
+        matricula:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Matricula
+      type: object
+      required:
+      - usuario
+      title: TechnicianItem
+    TechnicianRedirect:
+      properties:
+        de:
+          type: string
+          maxLength: 20
+          minLength: 1
+          title: De
+        para:
+          type: string
+          maxLength: 20
+          minLength: 1
+          title: Para
+        desativar_origem:
+          type: boolean
+          title: Desativar Origem
+          default: true
+      additionalProperties: false
+      type: object
+      required:
+      - de
+      - para
+      title: TechnicianRedirect
+    TechnicianRedirectResult:
+      properties:
+        de:
+          type: string
+          title: De
+        para:
+          type: string
+          title: Para
+        tickets_moved:
+          type: integer
+          title: Tickets Moved
+          default: 0
+        origem_desativada:
+          type: boolean
+          title: Origem Desativada
+          default: false
+        notification_created:
+          type: boolean
+          title: Notification Created
+          default: false
+        glpi_ok_ids:
+          items:
+            type: integer
+          type: array
+          title: Glpi Ok Ids
+        glpi_failed_ids:
+          items:
+            type: integer
+          type: array
+          title: Glpi Failed Ids
+      type: object
+      required:
+      - de
+      - para
+      title: TechnicianRedirectResult
+    TechnicianUpdate:
+      properties:
+        equipe:
+          anyOf:
+          - type: string
+            maxLength: 5
+            minLength: 1
+          - type: 'null'
+          title: Equipe
+        sit:
+          anyOf:
+          - type: string
+            pattern: ^[01]$
+          - type: 'null'
+          title: Sit
+        matricula:
+          anyOf:
+          - type: string
+            maxLength: 10
+          - type: 'null'
+          title: Matricula
+        h1:
+          anyOf:
+          - type: string
+            maxLength: 10
+          - type: 'null'
+          title: H1
+        h2:
+          anyOf:
+          - type: string
+            maxLength: 10
+          - type: 'null'
+          title: H2
+        empresa:
+          anyOf:
+          - type: string
+            maxLength: 25
+          - type: 'null'
+          title: Empresa
+      additionalProperties: false
+      type: object
+      title: TechnicianUpdate
+      description: Campos editáveis de Tb_Atrib (ADMIN). Atualiza todas as linhas
+        do mesmo Usuario.
+    TempoFaixaItem:
+      properties:
+        faixa:
+          type: string
+          title: Faixa
+        qtd:
+          type: integer
+          title: Qtd
+          default: 0
+      type: object
+      required:
+      - faixa
+      title: TempoFaixaItem
+    TicketDetail:
+      properties:
+        id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Id
+        titulo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Titulo
+        categoria:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoria
+        tecnico:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tecnico
+        equipe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe
+        sit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sit
+        solicitante:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Solicitante
+        data:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data
+        dat_sol:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dat Sol
+        metodo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Metodo
+        status_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Label
+        data_mod:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Mod
+        fonte:
+          anyOf:
+          - type: string
+            enum:
+            - sgc
+            - glpi
+          - type: 'null'
+          title: Fonte
+        descricao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Descricao
+        ml_log:
+          anyOf:
+          - $ref: '#/components/schemas/MlLogEntry'
+          - type: 'null'
+        explicacao:
+          anyOf:
+          - $ref: '#/components/schemas/AssignmentExplanation'
+          - type: 'null'
+      type: object
+      title: TicketDetail
+    TicketGlpiHint:
+      properties:
+        ticket_id:
+          type: integer
+          title: Ticket Id
+        encontrado:
+          type: boolean
+          title: Encontrado
+          default: false
+        titulo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Titulo
+        status:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Status
+        status_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Label
+        tecnico:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tecnico
+        mensagem:
+          type: string
+          title: Mensagem
+          default: ''
+      type: object
+      required:
+      - ticket_id
+      title: TicketGlpiHint
+      description: 'Quando o chamado não está no SGC: leitura só do GLPI.'
+    TicketListItem:
+      properties:
+        id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Id
+        titulo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Titulo
+        categoria:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Categoria
+        tecnico:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tecnico
+        equipe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe
+        sit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sit
+        solicitante:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Solicitante
+        data:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data
+        dat_sol:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dat Sol
+        metodo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Metodo
+        status_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Label
+        data_mod:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Data Mod
+        fonte:
+          anyOf:
+          - type: string
+            enum:
+            - sgc
+            - glpi
+          - type: 'null'
+          title: Fonte
+      type: object
+      title: TicketListItem
+    TicketReassign:
+      properties:
+        mode:
+          type: string
+          enum:
+          - equipe
+          - pessoa
+          title: Mode
+        equipe:
+          anyOf:
+          - type: string
+            maxLength: 5
+            minLength: 1
+          - type: 'null'
+          title: Equipe
+        tecnico:
+          anyOf:
+          - type: string
+            maxLength: 20
+            minLength: 1
+          - type: 'null'
+          title: Tecnico
+      additionalProperties: false
+      type: object
+      required:
+      - mode
+      title: TicketReassign
+      description: 'Reatribui um chamado: fila (equipe) ou pessoa específica.'
+    TicketReassignResult:
+      properties:
+        ticket_id:
+          type: integer
+          title: Ticket Id
+        mode:
+          type: string
+          title: Mode
+        equipe:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe
+        tecnico:
+          type: string
+          title: Tecnico
+        tecnico_anterior:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Tecnico Anterior
+        equipe_anterior:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipe Anterior
+        glpi_ok:
+          type: boolean
+          title: Glpi Ok
+          default: false
+        sgc_ok:
+          type: boolean
+          title: Sgc Ok
+          default: false
+        notification_created:
+          type: boolean
+          title: Notification Created
+          default: false
+        notification_admin:
+          type: boolean
+          title: Notification Admin
+          default: false
+        message:
+          type: string
+          title: Message
+          default: ''
+      type: object
+      required:
+      - ticket_id
+      - mode
+      - tecnico
+      title: TicketReassignResult
+    TokenResponse:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        token_type:
+          type: string
+          title: Token Type
+          default: bearer
+        expires_in_minutes:
+          type: integer
+          title: Expires In Minutes
+        user:
+          $ref: '#/components/schemas/UserPublic'
+      type: object
+      required:
+      - access_token
+      - expires_in_minutes
+      - user
+      title: TokenResponse
+    UserPublic:
+      properties:
+        id:
+          type: integer
+          title: Id
+        username:
+          type: string
+          title: Username
+        nome:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nome
+        perfil:
+          type: string
+          enum:
+          - ADMIN
+          - GESTOR
+          - OPERADOR
+          - CONSULTA
+          title: Perfil
+        ativo:
+          type: boolean
+          title: Ativo
+      type: object
+      required:
+      - id
+      - username
+      - perfil
+      - ativo
+      title: UserPublic
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    WeeklyPersonStats:
+      properties:
+        tecnico:
+          type: string
+          title: Tecnico
+        matricula:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Matricula
+        atribuidos:
+          type: integer
+          title: Atribuidos
+          default: 0
+        fechados:
+          type: integer
+          title: Fechados
+          default: 0
+        abertos:
+          type: integer
+          title: Abertos
+          default: 0
+        tempo_medio_horas:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tempo Medio Horas
+      type: object
+      required:
+      - tecnico
+      title: WeeklyPersonStats
+    WeeklyTeamReport:
+      properties:
+        week_start:
+          type: string
+          title: Week Start
+        week_end:
+          type: string
+          title: Week End
+        label:
+          type: string
+          title: Label
+        focus_teams:
+          items:
+            type: string
+          type: array
+          title: Focus Teams
+        teams:
+          items:
+            $ref: '#/components/schemas/WeeklyTeamStats'
+          type: array
+          title: Teams
+        totals:
+          $ref: '#/components/schemas/WeeklyTeamStats'
+        notes:
+          items:
+            type: string
+          type: array
+          title: Notes
+      type: object
+      required:
+      - week_start
+      - week_end
+      - label
+      - totals
+      title: WeeklyTeamReport
+      description: Compatível com o relatório semanal antigo.
+    WeeklyTeamStats:
+      properties:
+        equipe:
+          type: string
+          title: Equipe
+        atribuidos:
+          type: integer
+          title: Atribuidos
+          default: 0
+        fechados:
+          type: integer
+          title: Fechados
+          default: 0
+        abertos:
+          type: integer
+          title: Abertos
+          default: 0
+        backlog_ativo:
+          type: integer
+          title: Backlog Ativo
+          default: 0
+        tempo_medio_horas:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Tempo Medio Horas
+        por_tecnico:
+          items:
+            $ref: '#/components/schemas/WeeklyPersonStats'
+          type: array
+          title: Por Tecnico
+      type: object
+      required:
+      - equipe
+      title: WeeklyTeamStats
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer
