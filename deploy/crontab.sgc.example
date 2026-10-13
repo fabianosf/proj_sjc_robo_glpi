@@ -1,0 +1,15 @@
+# Exemplo de cron Linux (alternativa ao AgendadorSGC.py em loop)
+# Pré-requisito no servidor: ./setup_env.sh
+# Edite os caminhos e use: crontab -e
+
+# Re-treino diário às 02:00
+# 0 2 * * * cd /opt/sgc && ./sgc_python.sh python/ExecutarRetreinoDiario.py >> logs/retreino.log 2>&1
+
+# PDF assertividade às 03:00
+# 0 3 * * * cd /opt/sgc && ./sgc_python.sh python/AgendadorSGC.py assertividade >> logs/assertividade.log 2>&1
+
+# Relatório cobertura feedback — domingo 04:00
+# 0 4 * * 0 cd /opt/sgc && ./sgc_python.sh python/AgendadorSGC.py feedback >> logs/feedback.log 2>&1
+
+# OU um único processo Python (recomendado — igual em Windows/Linux):
+# @reboot cd /opt/sgc && ./run.sh >> logs/agendador.log 2>&1

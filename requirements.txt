@@ -1,0 +1,27 @@
+# SGC — dependências da aplicação (MariaDB + ML + GLPI + Telegram + PDF)
+
+beautifulsoup4>=4.12.0,<5
+certifi>=2025.1.0
+charset-normalizer>=3.4.0
+cryptography>=44.0.0
+joblib>=1.4.0
+numpy>=2.2.0,<3
+pandas>=2.2.0,<3
+pillow>=10.0.0
+pymysql>=1.1.0
+pyTelegramBotAPI>=4.27.0
+python-dateutil>=2.9.0
+pytz>=2025.1
+reportlab>=4.2.0,<5
+requests>=2.32.0
+scikit-learn>=1.6.0,<2
+scipy>=1.15.0,<2
+six>=1.17.0
+soupsieve>=2.6
+threadpoolctl>=3.5.0
+typing_extensions>=4.12.0
+tzdata>=2025.1
+urllib3>=2.4.0
+
+# Oracle (opcional — apenas se conf/*.dat usar sgbd=oracle)
+oracledb>=2.0.0

@@ -1,0 +1,17 @@
+# Dependências da API FastAPI (painel SGC) — não altera o worker
+# Instalar:  venv\Scripts\python.exe -m pip install -r requirements-api.txt
+
+fastapi>=0.115.0,<1
+uvicorn[standard]>=0.32.0,<1
+pydantic>=2.0.0,<3
+
+# Auth (JWT + AD via Windows LogonUser)
+bcrypt>=4.0.0,<5
+PyJWT>=2.8.0,<3
+python-dotenv>=1.0.0
+pywin32>=306; sys_platform == "win32"
+
+# Já usadas pelo DAL legado (python/DAL.py) — garantir se o venv for mínimo
+pymysql>=1.1.0
+pandas>=2.2.0,<3
+cryptography>=44.0.0

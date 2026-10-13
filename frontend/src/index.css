@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-display: "IBM Plex Sans", "Source Sans 3", sans-serif;
+  --color-ink: var(--sgc-ink);
+  --color-muted: var(--sgc-muted);
+  --color-panel: var(--sgc-panel);
+  --color-canvas: var(--sgc-canvas);
+  --color-line: var(--sgc-line);
+  --color-accent: var(--sgc-accent);
+  --color-accent-soft: var(--sgc-accent-soft);
+  --color-warn: var(--sgc-warn);
+  --color-danger: var(--sgc-danger);
+  --color-ok: var(--sgc-ok);
+  --color-ok-soft: var(--sgc-ok-soft);
+  --color-danger-soft: var(--sgc-danger-soft);
+  --color-warn-soft: var(--sgc-warn-soft);
+}
+
+:root {
+  --sgc-ink: #0f172a;
+  --sgc-muted: #64748b;
+  --sgc-panel: #ffffff;
+  --sgc-canvas: #f8fafc;
+  --sgc-line: #e8edf3;
+  --sgc-accent: #0f766e;
+  --sgc-accent-soft: #ccfbf1;
+  --sgc-warn: #b45309;
+  --sgc-danger: #b91c1c;
+  --sgc-ok: #15803d;
+  --sgc-ok-soft: #f0fdfa;
+  --sgc-danger-soft: #fef2f2;
+  --sgc-warn-soft: #fffbeb;
+  --sgc-glow-a: rgb(204 251 241 / 0.16);
+  --sgc-glow-b: rgb(226 232 240 / 0.28);
+}
+
+html.dark {
+  --sgc-ink: #e8eef7;
+  --sgc-muted: #94a3b8;
+  --sgc-panel: #121a2b;
+  --sgc-canvas: #0b1220;
+  --sgc-line: #243044;
+  --sgc-accent: #2dd4bf;
+  --sgc-accent-soft: #134e4a;
+  --sgc-warn: #fbbf24;
+  --sgc-danger: #f87171;
+  --sgc-ok: #4ade80;
+  --sgc-ok-soft: #0f2e2a;
+  --sgc-danger-soft: #3f1d1d;
+  --sgc-warn-soft: #3b2f14;
+  --sgc-glow-a: rgb(45 212 191 / 0.06);
+  --sgc-glow-b: rgb(36 48 68 / 0.45);
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    @apply h-full antialiased;
+  }
+
+  body {
+    @apply m-0 min-h-full bg-canvas text-ink font-sans;
+    background-image:
+      radial-gradient(ellipse 70% 36% at 0% 0%, var(--sgc-glow-a), transparent),
+      radial-gradient(ellipse 50% 28% at 100% 0%, var(--sgc-glow-b), transparent);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  #root {
+    @apply min-h-full;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply rounded-xl border border-line bg-panel text-ink shadow-none;
+    font-size: 16px;
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply border-accent outline-none ring-2 ring-accent/20;
+  }
+
+  @media (min-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 0.875rem;
+    }
+  }
+
+  table {
+    @apply text-sm;
+  }
+
+  thead {
+    @apply text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+}
+
+@layer components {
+  .sgc-panel {
+    @apply rounded-xl border border-line bg-panel;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  }
+}

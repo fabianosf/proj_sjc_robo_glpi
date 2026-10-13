@@ -1,0 +1,64 @@
+# Ambientes
+venv/
+frontend/node_modules/
+
+# Bytecode / cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# Segredos locais (manter *.example versionados)
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Credenciais / config sensível (não versionar)
+/conf/*
+!/conf/.gitkeep
+!/conf/README.md
+**/chave.key
+*.pem
+*.p12
+
+# Drivers Oracle locais (grandes; instalar à parte)
+/drivers/oracle_linux/
+/drivers/oracle_win/
+
+# Logs de runtime
+log/*.log
+log/*.json
+*.log
+
+# Build / pacote Windows
+dist-windows/
+frontend/dist/
+frontend/dist-ssr/
+
+# Relatórios gerados
+relatorios/*.pdf
+relatorios/*.txt
+
+# Modelos ML grandes / binários locais
+Modelo/*.pkl
+Modelo/*.joblib
+
+# Cache / testes
+.pytest_cache/
+*.egg-info/
+
+# SO / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

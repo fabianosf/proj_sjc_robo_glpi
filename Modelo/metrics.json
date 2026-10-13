@@ -1,0 +1,101 @@
+{
+  "versoes": [
+    {
+      "arquivo": "ModeloML_v20260708_021215_f1-0.565.pkl",
+      "data": "2026-07-08 02:12:15",
+      "f1_macro": 0.5651512548871663,
+      "version": 3,
+      "train_samples": 3453,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260707_135824_f1-0.563.pkl",
+      "data": "2026-07-07 13:58:24",
+      "f1_macro": 0.5632832883167389,
+      "version": 3,
+      "train_samples": 3445,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260707_094723_f1-0.566.pkl",
+      "data": "2026-07-07 09:47:23",
+      "f1_macro": 0.5657161615930312,
+      "version": 3,
+      "train_samples": 3433,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260707_092215_f1-0.575.pkl",
+      "data": "2026-07-07 09:22:15",
+      "f1_macro": 0.5746729794591993,
+      "version": 3,
+      "train_samples": 3431,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260707_021246_f1-0.552.pkl",
+      "data": "2026-07-07 02:12:46",
+      "f1_macro": 0.5516760829072231,
+      "version": 3,
+      "train_samples": 3393,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260707_021239_f1-0.552.pkl",
+      "data": "2026-07-07 02:12:39",
+      "f1_macro": 0.5516760829072231,
+      "version": 3,
+      "train_samples": 3393,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260706_164251_f1-0.551.pkl",
+      "data": "2026-07-06 16:42:51",
+      "f1_macro": 0.5506943902639982,
+      "version": 3,
+      "train_samples": 3396,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260706_153535_f1-0.556.pkl",
+      "data": "2026-07-06 15:35:35",
+      "f1_macro": 0.5563420448599593,
+      "version": 3,
+      "train_samples": 3397,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260706_145609_f1-0.548.pkl",
+      "data": "2026-07-06 14:56:09",
+      "f1_macro": 0.5480046983281864,
+      "version": 3,
+      "train_samples": 3352,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260706_021816_f1-0.558.pkl",
+      "data": "2026-07-06 02:18:16",
+      "f1_macro": 0.5579170464748053,
+      "version": 3,
+      "train_samples": 3363,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260704_021242_f1-0.562.pkl",
+      "data": "2026-07-04 02:12:42",
+      "f1_macro": 0.5619848854795,
+      "version": 3,
+      "train_samples": 3397,
+      "classes": 9
+    },
+    {
+      "arquivo": "ModeloML_v20260703_073429_f1-0.568.pkl",
+      "data": "2026-07-03 07:34:29",
+      "f1_macro": 0.567603883512393,
+      "version": 3,
+      "train_samples": 3386,
+      "classes": 9
+    }
+  ],
+  "ativo": "ModeloML_v20260708_021215_f1-0.565.pkl"
+}

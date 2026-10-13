@@ -1,0 +1,39 @@
+SGC — Instalação em outro PC Windows
+====================================
+
+NESTE PC (origem) — gerar pacote:
+  build_windows_pkg.bat
+  -> pasta dist-windows\SGC\
+
+Copie dist-windows\SGC para o outro PC (USB/rede).
+NAO copie venv nem conf secreta no zip publico; conf vai a parte.
+
+NO PC DE DESTINO
+----------------
+1) Python 3.10+ (Add to PATH)
+
+2) Na pasta SGC\:
+     setup_producao.bat
+
+3) Copie MANUALMENTE para conf\:
+     chave.key , sgc.dat , glpi.dat
+   (mesmos do ambiente que acessa MariaDB/GLPI)
+
+4) copy backend\.env.example backend\.env
+   Preencha: SGC_JWT_SECRET, SGC_AD_DOMAIN,
+             SGC_AUTH_ADMIN_MATRICULAS / SGC_AUTH_ADMIN_AD_USERS
+
+5) Subir:
+   A) So painel (robô ja em outro PC):
+        set SGC_API_PORT=8001
+        set SGC_SERVE_FRONTEND=1
+        run_api.bat
+
+   B) Robô + painel neste PC (nao rode run.bat em dois PCs ao mesmo tempo):
+        Terminal 1: run.bat
+        Terminal 2: set SGC_API_PORT=8001 & set SGC_SERVE_FRONTEND=1 & run_api.bat
+
+6) Abrir: http://127.0.0.1:8001/
+   Login: matricula + senha Windows (AD)
+
+Detalhes: docs\DEPLOY-WINDOWS.md
