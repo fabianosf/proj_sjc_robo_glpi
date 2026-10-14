@@ -10,7 +10,8 @@ Guia do dia a dia (Windows). Para instalação em outro PC, use [`INSTALAR-WINDO
 |------|------|
 | **Ligar** (robô + painel, sem janela preta) | Dois cliques em `Iniciar_SGC.vbs` |
 | **Parar** | Dois cliques em `Parar_SGC.vbs` |
-| **Abrir o painel** | Navegador: **http://127.0.0.1:8001** |
+| **Abrir o painel (neste PC)** | **http://127.0.0.1:8001** |
+| **Abrir de outro PC (mesma rede)** | **http://IP_DO_PC:8001** (ex.: `http://10.1.26.209:8001`) |
 
 Na primeira vez (ou depois de mudar o frontend):
 
@@ -26,9 +27,11 @@ Remover: `uninstall_autostart_windows.bat`
 
 ## 2) Entrar no painel
 
-1. Abra http://127.0.0.1:8001  
+1. Neste PC: http://127.0.0.1:8001 — outro PC na LAN: http://IP_DO_PC:8001  
 2. Login com **matrícula** + **senha do Windows (AD)**  
 3. Só entram usuários na allowlist (ADMIN configurado + técnicos N3 com matrícula)
+
+A API escuta em `0.0.0.0:8001` (rede local). Se outro PC não conectar, rode **como Administrador** `abrir_firewall_mobile.bat` (libera a porta 8001).
 
 - Perfil **ADMIN**: pode corrigir atribuição, técnicos, regras, matrículas.  
 - Perfil **CONSULTA** (N3): principalmente leitura.
@@ -126,6 +129,7 @@ Se o painel abre mas o robô não atribui: rode de novo `Iniciar_SGC.vbs` (ou s�
 ## 10) Resumo rápido
 
 1. `Iniciar_SGC.vbs`  
-2. http://127.0.0.1:8001 → login AD  
+2. http://127.0.0.1:8001 (ou http://IP:8001 na LAN) → login AD  
 3. Robô cuida dos **Novos**; você (ADMIN) corrige pelo painel quando precisar  
-4. `Parar_SGC.vbs` ao encerrar o dia (se não usar autostart)
+4. `Parar_SGC.vbs` ao encerrar o dia (se não usar autostart)  
+5. Outro PC sem acesso: botão direito em `abrir_firewall_mobile.bat` → Executar como administrador

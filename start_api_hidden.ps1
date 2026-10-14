@@ -9,7 +9,8 @@ $LogDir = Join-Path $Root 'log'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
 $env:SGC_SERVE_FRONTEND = '1'
-$env:SGC_API_HOST = '127.0.0.1'
+# 0.0.0.0 = acessível na rede local (outro PC: http://IP_DO_PC:8001)
+$env:SGC_API_HOST = '0.0.0.0'
 $env:SGC_API_PORT = '8001'
 $env:SGC_API_RELOAD = '0'
 $env:SGC_API_DOCS = '0'
@@ -18,7 +19,7 @@ $env:PYTHONWARNINGS = 'ignore'
 $env:PYTHONPATH = "$(Join-Path $Root 'backend');$(Join-Path $Root 'python')"
 
 Start-Process -FilePath $Pyw `
-  -ArgumentList '-m','uvicorn','app.main:app','--app-dir','backend','--host','127.0.0.1','--port','8001' `
+  -ArgumentList '-m','uvicorn','app.main:app','--app-dir','backend','--host','0.0.0.0','--port','8001' `
   -WorkingDirectory $Root `
   -WindowStyle Hidden `
   -RedirectStandardOutput (Join-Path $LogDir 'api_stdout.log') `

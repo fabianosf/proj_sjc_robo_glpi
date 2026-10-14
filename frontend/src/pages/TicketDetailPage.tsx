@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import {
   fetchTeamsGuide,
@@ -16,7 +16,23 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
 import { PageHeader } from '../components/ui/PageHeader'
+import { Button } from '../components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '../components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { displayDate, displayValue } from '../lib/format'
+import { cn } from '../lib/utils'
 
 function Field({
   label,
@@ -134,12 +150,16 @@ function MissingInSgcPanel({ ticketId }: { ticketId: number }) {
 
 export function TicketDetailPage() {
   const { ticketId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const id = Number(ticketId)
   const { hasMinProfile } = useAuth()
   const canReassign = hasMinProfile('ADMIN')
   const queryClient = useQueryClient()
 
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(
+    () => canReassign && searchParams.get('direcionar') === '1',
+  )
+  const [reviewing, setReviewing] = useState(false)
   const [tab, setTab] = useState<'equipe' | 'pessoa'>('equipe')
   const [equipe, setEquipe] = useState('')
   const [tecnico, setTecnico] = useState('')
@@ -157,6 +177,20 @@ export function TicketDetailPage() {
       return count < 2
     },
   })
+
+  useEffect(() => {
+    if (
+      !canReassign ||
+      searchParams.get('direcionar') !== '1' ||
+      query.isLoading ||
+      !query.data
+    ) {
+      return
+    }
+    const next = new URLSearchParams(searchParams)
+    next.delete('direcionar')
+    setSearchParams(next, { replace: true })
+  }, [canReassign, query.data, query.isLoading, searchParams, setSearchParams])
 
   const teamsQuery = useQuery({
     queryKey: ['teams-guide'],
@@ -286,24 +320,24 @@ export function TicketDetailPage() {
         title={`Chamado #${displayValue(t.id)}`}
         description={
           canReassign
-            ? 'Detalhe do chamado. ADMIN pode enviar para outra fila ou pessoa.'
-            : 'Detalhe somente leitura retornado pela API FastAPI.'
+            ? 'Confira o chamado e, se necessário, altere a equipe ou a pessoa responsável.'
+            : 'Você pode consultar este chamado, mas não tem permissão para alterar o destino.'
         }
         actions={
           canReassign ? (
-            <button
+            <Button
               type="button"
-              className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white"
               onClick={() => {
                 setOpen(true)
                 setTab('equipe')
                 setEquipe('')
                 setTecnico('')
+                setReviewing(false)
                 setFormError(null)
               }}
             >
-              Enviar para outra fila
-            </button>
+              Alterar destino
+            </Button>
           ) : undefined
         }
       />
@@ -461,130 +495,133 @@ export function TicketDetailPage() {
         </div>
       </div>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-md rounded-2xl border border-line bg-panel p-6 shadow-lg">
-            <h2 className="font-display text-lg font-semibold text-ink">
-              Enviar chamado #{id}
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              Escolha a fila (equipe) ou uma pessoa. O robô continua cuidando dos Novos;
-              isto só corrige este chamado.
-            </p>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+            <DialogTitle className="pr-8 font-display text-lg font-semibold text-ink">
+              {reviewing ? 'Confirme o novo destino' : `Para onde deve ir o chamado #${id}?`}
+            </DialogTitle>
+            <DialogDescription className="mt-1 text-sm text-muted">
+              Esta alteração vale somente para este chamado. Chamados novos continuam sendo
+              direcionados automaticamente pelo robô.
+            </DialogDescription>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                className={
-                  'rounded-lg px-3 py-1.5 text-sm font-semibold ' +
-                  (tab === 'equipe'
-                    ? 'bg-accent text-white'
-                    : 'border border-line text-ink hover:bg-canvas')
-                }
-                onClick={() => {
-                  setTab('equipe')
+            {!reviewing ? (
+              <Tabs
+                value={tab}
+                onValueChange={(value) => {
+                  setTab(value as 'equipe' | 'pessoa')
                   setFormError(null)
+                  setReviewing(false)
                 }}
               >
-                Fila (equipe)
-              </button>
-              <button
-                type="button"
-                className={
-                  'rounded-lg px-3 py-1.5 text-sm font-semibold ' +
-                  (tab === 'pessoa'
-                    ? 'bg-accent text-white'
-                    : 'border border-line text-ink hover:bg-canvas')
-                }
-                onClick={() => {
-                  setTab('pessoa')
-                  setFormError(null)
-                }}
-              >
-                Pessoa
-              </button>
-            </div>
-
-            {tab === 'equipe' ? (
-              <div className="mt-4">
-                <p className="mb-2 text-xs text-muted">
-                  O sistema escolhe um técnico disponível dessa equipe (ativo e no
-                  horário). Passe o mouse / leia a dica de cada fila.
-                </p>
-                {teamsQuery.isLoading ? (
-                  <p className="text-sm text-muted">Carregando filas…</p>
-                ) : activeTeams.length === 0 ? (
-                  <p className="text-sm text-muted">Nenhuma fila com técnico ativo.</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {activeTeams.map((eq) => {
-                      const g = guideByEquipe.get(eq)
-                      const tip =
-                        g?.exemplos?.slice(0, 3).join(', ') ||
-                        g?.resumo ||
-                        'Fila do SGC'
-                      return (
-                        <button
-                          key={eq}
-                          type="button"
-                          title={g?.resumo || tip}
-                          onClick={() => setEquipe(eq)}
-                          className={
-                            'rounded-lg border px-3 py-2 text-left text-sm ' +
-                            (equipe === eq
-                              ? 'border-accent bg-accent text-white'
-                              : 'border-line bg-canvas hover:border-accent/50')
-                          }
-                        >
-                          <span className="font-semibold">{eq}</span>
-                          <span
-                            className={
-                              'mt-0.5 block text-xs ' +
-                              (equipe === eq ? 'text-white/90' : 'text-muted')
-                            }
-                          >
-                            {g?.resumo || tip}
-                            {g && g.ativos > 0 ? ` · ${g.ativos} ativo(s)` : ''}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-                {selectedGuide ? (
-                  <p className="mt-3 rounded-lg border border-line bg-canvas/60 px-3 py-2 text-xs text-muted">
-                    Use a fila <strong className="text-ink">{equipe}</strong> se o
-                    chamado for sobre:{' '}
-                    {(selectedGuide.exemplos.slice(0, 6).join(', ') ||
-                      selectedGuide.resumo) + '.'}
+                <TabsList className="mt-4">
+                  <TabsTrigger value="equipe">
+                    <span className="block">Enviar para uma equipe</span>
+                    <span className="mt-1 block text-xs font-normal">O sistema escolhe um técnico disponível</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="pessoa">
+                    <span className="block">Escolher uma pessoa</span>
+                    <span className="mt-1 block text-xs font-normal">Você define o técnico responsável</span>
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="equipe" className="mt-4">
+                  <p className="mb-2 text-sm text-muted">
+                    O sistema encaminha o chamado a um técnico ativo e disponível da equipe. As dicas ajudam a escolher a equipe certa.
                   </p>
-                ) : null}
-              </div>
+                  {teamsQuery.isLoading ? (
+                    <p className="text-sm text-muted">Carregando equipes…</p>
+                  ) : activeTeams.length === 0 ? (
+                    <p className="text-sm text-muted">Nenhuma equipe com técnico disponível.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {activeTeams.map((eq) => {
+                        const guide = guideByEquipe.get(eq)
+                        const hint =
+                          guide?.exemplos?.slice(0, 3).join(', ') ||
+                          guide?.resumo ||
+                          'Equipe do SGC'
+                        return (
+                          <Button
+                            key={eq}
+                            type="button"
+                            variant={equipe === eq ? 'secondary' : 'outline'}
+                            aria-pressed={equipe === eq}
+                            title={guide?.resumo || hint}
+                            onClick={() => setEquipe(eq)}
+                            className={cn(
+                              'h-auto w-full justify-start px-3 py-2 text-left',
+                              equipe === eq && 'ring-1 ring-accent/40',
+                            )}
+                          >
+                            <span>
+                              <span className="block font-semibold">Equipe {eq}</span>
+                              <span className="mt-0.5 block text-xs font-normal text-muted">
+                                {guide?.resumo || hint}
+                                {guide && guide.ativos > 0 ? ` · ${guide.ativos} disponíveis` : ''}
+                              </span>
+                            </span>
+                          </Button>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {selectedGuide ? (
+                    <p className="mt-3 rounded-md border border-line bg-canvas/60 px-3 py-2 text-xs text-muted">
+                      A equipe <strong className="text-ink">{equipe}</strong> atende:{' '}
+                      {(selectedGuide.exemplos.slice(0, 6).join(', ') ||
+                        selectedGuide.resumo) + '.'}
+                    </p>
+                  ) : null}
+                </TabsContent>
+                <TabsContent value="pessoa" className="mt-4">
+                  <label className="block">
+                    <span className="mb-1 block text-sm font-semibold text-ink">
+                      Selecione a pessoa responsável
+                    </span>
+                    <Select value={tecnico} onValueChange={setTecnico}>
+                      <SelectTrigger aria-label="Técnico responsável">
+                        <SelectValue placeholder="Selecione um técnico ativo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeLogins.map((login) => {
+                          const tech = techsQuery.data?.find(
+                            (item) => item.usuario.toUpperCase() === login.toUpperCase(),
+                          )
+                          return (
+                            <SelectItem key={login} value={login}>
+                              {login}{tech?.equipe ? ` · Equipe ${tech.equipe}` : ''}
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <span className="mt-1 block text-xs text-muted">
+                      O chamado será atribuído diretamente a essa pessoa.
+                    </span>
+                  </label>
+                </TabsContent>
+              </Tabs>
             ) : (
-              <label className="mt-4 block">
-                <span className="mb-1 block text-xs font-semibold uppercase text-muted">
-                  Técnico destino
-                </span>
-                <select
-                  value={tecnico}
-                  onChange={(e) => setTecnico(e.target.value)}
-                  className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm"
-                >
-                  <option value="">Selecione…</option>
-                  {activeLogins.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-                <span className="mt-1 block text-xs text-muted">
-                  Atribui este chamado direto a esta pessoa.
-                </span>
-              </label>
+              <div className="mt-4 rounded-md border border-line bg-canvas p-4">
+                <p className="text-xs font-semibold uppercase text-muted">Resumo da alteração</p>
+                <dl className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  <div>
+                    <dt className="text-xs text-muted">Destino atual</dt>
+                    <dd className="mt-1 text-sm font-semibold text-ink">
+                      {displayValue(t.equipe)} · {displayValue(t.tecnico)}
+                    </dd>
+                  </div>
+                  <span className="hidden text-lg text-muted sm:block" aria-hidden>→</span>
+                  <div>
+                    <dt className="text-xs text-muted">Novo destino</dt>
+                    <dd className="mt-1 text-sm font-semibold text-ink">
+                      {tab === 'equipe'
+                        ? `Equipe ${equipe} · técnico escolhido pelo sistema`
+                        : `${tecnico}${techsQuery.data?.find((item) => item.usuario === tecnico)?.equipe ? ` · Equipe ${techsQuery.data.find((item) => item.usuario === tecnico)?.equipe}` : ''}`}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
             )}
 
             {formError ? (
@@ -594,30 +631,34 @@ export function TicketDetailPage() {
             ) : null}
 
             <div className="mt-5 flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
-                className="rounded-lg border border-line px-3 py-2 text-sm"
-                onClick={() => setOpen(false)}
+                variant="outline"
+                onClick={() => {
+                  if (reviewing) setReviewing(false)
+                  else setOpen(false)
+                }}
                 disabled={mutation.isPending}
               >
-                Cancelar
-              </button>
-              <button
+                {reviewing ? 'Voltar e ajustar' : 'Cancelar'}
+              </Button>
+              <Button
                 type="button"
-                className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={!canConfirm || mutation.isPending}
-                onClick={() => mutation.mutate()}
+                onClick={() => {
+                  if (reviewing) mutation.mutate()
+                  else setReviewing(true)
+                }}
               >
                 {mutation.isPending
-                  ? 'Enviando…'
-                  : tab === 'equipe'
-                    ? `Enviar para fila ${equipe || '…'}`
-                    : 'Enviar para pessoa'}
-              </button>
+                  ? 'Atualizando chamado…'
+                  : reviewing
+                    ? 'Confirmar alteração'
+                    : 'Revisar destino'}
+              </Button>
             </div>
-          </div>
-        </div>
-      ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

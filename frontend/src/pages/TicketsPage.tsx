@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { fetchTickets } from '../api/endpoints'
+import { useAuth } from '../auth/AuthContext'
+import { Button } from '../components/ui/button'
 import { MethodBadge } from '../components/MethodBadge'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
@@ -28,6 +30,8 @@ function resolveTicketSource(params: URLSearchParams): TicketSource {
 }
 
 export function TicketsPage() {
+  const { hasMinProfile } = useAuth()
+  const canReassign = hasMinProfile('ADMIN')
   const [params, setParams] = useSearchParams()
   const page = Math.max(1, Number(params.get('page') || 1) || 1)
   const pageSize = Math.min(100, Math.max(1, Number(params.get('page_size') || 20) || 20))
@@ -86,6 +90,13 @@ export function TicketsPage() {
             : 'Base local SGC (Tb_Ticket_new) — chamados atribuídos pelo robô.'
         }
       />
+
+      {isGlpi ? (
+        <p className="mb-4 rounded-lg border border-line bg-panel px-3 py-2 text-sm text-muted">
+          Esta lista é para consulta. Chamados novos continuam sendo tratados pelo robô;
+          para alterar o destino de um chamado já processado, selecione <strong className="text-ink">SGC (robô)</strong>.
+        </p>
+      ) : null}
 
       <div className="mb-4 flex flex-wrap gap-2">
         <button
@@ -184,6 +195,9 @@ export function TicketsPage() {
                   ) : (
                     <th className="px-3 py-3 font-semibold">Método</th>
                   )}
+                  {canReassign && !isGlpi ? (
+                    <th className="px-3 py-3 font-semibold">Ação</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -213,6 +227,19 @@ export function TicketsPage() {
                         'Não disponível'
                       )}
                     </td>
+                    {canReassign && !isGlpi ? (
+                      <td className="px-3 py-2.5">
+                        {t.id != null ? (
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={`/chamados/${t.id}?direcionar=1`}>
+                              Direcionar
+                            </Link>
+                          </Button>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    ) : null}
                     <td className="max-w-[14rem] truncate px-3 py-2.5" title={t.titulo ?? undefined}>
                       {displayValue(t.titulo)}
                     </td>

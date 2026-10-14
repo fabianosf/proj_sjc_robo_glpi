@@ -14,6 +14,7 @@ type Situation = {
   level: Level
   label: string
   text: string
+  help?: string
   skipId?: number | null
   actionTo?: string
   actionLabel?: string
@@ -31,13 +32,14 @@ function situationOf(data: DashboardSummary | undefined): Situation {
   }
   if (data.worker_alive === false) {
     return {
-      level: 'fail',
-      label: 'Falha',
-      text: data.worker_last_error
-        ? `Robô parado · ${data.worker_last_error}`
-        : 'Robô parado',
+      level: 'warn',
+      label: 'Robô parado',
+      text: 'O painel está conectado, mas a atribuição automática está pausada.',
+      help: data.worker_last_error
+        ? `Para retomar no Windows, inicie o Worker com start_worker_hidden.vbs na pasta do SGC. Último erro: ${data.worker_last_error}`
+        : 'Chamados novos permanecem no GLPI até o Worker voltar. Para retomar no Windows, execute start_worker_hidden.vbs na pasta do SGC.',
       actionTo: '/agendamentos',
-      actionLabel: 'Ver agendamentos',
+      actionLabel: 'Ver status do robô',
     }
   }
   if (data.worker_glpi_ok === false) {
@@ -154,11 +156,12 @@ export function DashboardPage() {
           </p>
         </div>
         {sit.actionTo && sit.level !== 'ok' ? (
-          <p className="mt-2 text-sm">
-            <Link to={sit.actionTo} className="font-semibold text-accent hover:underline">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+            {sit.help ? <p className="text-sm text-muted">{sit.help}</p> : null}
+            <Link to={sit.actionTo} className="text-sm font-semibold text-accent hover:underline">
               {sit.actionLabel}
             </Link>
-          </p>
+          </div>
         ) : null}
       </section>
 

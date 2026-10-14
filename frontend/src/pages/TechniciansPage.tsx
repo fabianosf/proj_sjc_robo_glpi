@@ -15,6 +15,21 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
 import { PageHeader } from '../components/ui/PageHeader'
+import { Button } from '../components/ui/button'
+import { Checkbox } from '../components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '../components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
 import { useDebounce } from '../hooks/useDebounce'
 import { displayNumber, displayValue } from '../lib/format'
 
@@ -54,7 +69,8 @@ export function TechniciansPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [redirectFrom, setRedirectFrom] = useState<TechnicianItem | null>(null)
   const [redirectTo, setRedirectTo] = useState('')
-  const [redirectOff, setRedirectOff] = useState(true)
+  const [redirectOff, setRedirectOff] = useState(false)
+  const [redirectReview, setRedirectReview] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
 
   const query = useQuery({
@@ -102,16 +118,14 @@ export function TechniciansPage() {
       setRedirectFrom(null)
       setRedirectTo('')
       const failed = res.glpi_failed_ids ?? []
-      const failTxt =
-        failed.length > 0
-          ? `; GLPI falhou em ${failed.length}: #${failed.slice(0, 8).join(', #')}` +
-            (failed.length > 8 ? '…' : '')
-          : ''
+      const failedIds = failed.slice(0, 8).map((id) => `#${id}`).join(', ')
+      const failedText = failed.length
+        ? ` No GLPI, ${failed.length} chamado(s) não puderam ser atualizados${failedIds ? `: ${failedIds}` : ''}${failed.length > 8 ? ', entre outros' : ''}.`
+        : ''
       setBanner(
-        `Redirecionado ${res.de} → ${res.para} (${res.tickets_moved} ticket(s) local(is)` +
-          `${res.origem_desativada ? '; origem desativada' : ''}` +
-          `${res.notification_created ? '; notificação enviada' : ''}` +
-          `${failTxt}).`,
+        `${res.tickets_moved} chamado(s) transferido(s) de ${res.de} para ${res.para} no SGC.` +
+          `${res.origem_desativada ? ` ${res.de} foi desativado para novas atribuições.` : ` ${res.de} continua ativo.`}` +
+          failedText,
       )
       await queryClient.invalidateQueries({ queryKey: ['technicians'] })
       await queryClient.invalidateQueries({ queryKey: ['teams'] })
@@ -245,8 +259,8 @@ export function TechniciansPage() {
         title="Técnicos"
         description={
           canEdit
-            ? 'Edite equipe/matrícula, importe CSV, redirecione login ou aplique o mapa do .env.'
-            : 'Cadastro operacional. Edição apenas para ADMIN.'
+            ? 'Consulte a equipe e a disponibilidade. Como ADMIN, você pode editar cadastros ou transferir chamados entre técnicos.'
+            : 'Consulte a equipe e a disponibilidade dos técnicos.'
         }
       />
 
@@ -368,26 +382,29 @@ export function TechniciansPage() {
                   {canEdit ? (
                     <td className="px-3 py-2.5">
                       <div className="flex flex-wrap gap-1.5">
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => openEdit(t)}
-                          className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-accent hover:bg-canvas"
                         >
                           Editar
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() => {
                             setRedirectFrom(t)
                             setRedirectTo('')
-                            setRedirectOff(true)
+                            setRedirectOff(false)
+                            setRedirectReview(false)
                             setFormError(null)
                             setBanner(null)
                           }}
-                          className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold hover:bg-canvas"
                         >
-                          Redirecionar
-                        </button>
+                          Transferir chamados
+                        </Button>
                       </div>
                     </td>
                   ) : null}
@@ -502,72 +519,131 @@ export function TechniciansPage() {
         </div>
       ) : null}
 
-      {redirectFrom ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-md rounded-2xl border border-line bg-panel p-6 shadow-lg">
-            <h2 className="font-display text-lg font-semibold text-ink">
-              Redirecionar {redirectFrom.usuario}
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              Move tickets locais deste login para o destino. O robô deixa de usar a origem se
-              desativar.
-            </p>
-            <label className="mt-4 block">
-              <span className="mb-1 block text-xs font-semibold uppercase text-muted">
-                Novo login (destino ativo)
-              </span>
-              <select
-                value={redirectTo}
-                onChange={(e) => setRedirectTo(e.target.value)}
-                className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm"
-              >
-                <option value="">Selecione…</option>
-                {activeLogins
-                  .filter((u) => u.toUpperCase() !== redirectFrom.usuario.toUpperCase())
-                  .map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <label className="mt-3 flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={redirectOff}
-                onChange={(e) => setRedirectOff(e.target.checked)}
-              />
-              Desativar origem (Sit=0)
-            </label>
+      <Dialog
+        open={Boolean(redirectFrom)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRedirectFrom(null)
+            setRedirectReview(false)
+          }
+        }}
+      >
+        {redirectFrom ? (
+          <DialogContent>
+            <DialogTitle className="pr-8 font-display text-lg font-semibold text-ink">
+              {redirectReview ? 'Revise a transferência' : 'Transferir chamados para outro técnico'}
+            </DialogTitle>
+            <DialogDescription className="mt-1 text-sm text-muted">
+              Todos os chamados atualmente atribuídos a este técnico serão enviados para o destino escolhido.
+            </DialogDescription>
+            {!redirectReview ? (
+              <>
+                <div className="mt-4 grid gap-3 rounded-lg border border-line bg-canvas p-3 sm:grid-cols-2">
+                  <p className="text-sm"><span className="block text-xs text-muted">Técnico atual</span><strong>{redirectFrom.usuario}</strong>{redirectFrom.equipe ? ` · Equipe ${redirectFrom.equipe}` : ''}</p>
+                  <p className="text-sm"><span className="block text-xs text-muted">Chamados afetados</span><strong>Todos os chamados atribuídos a este técnico</strong></p>
+                </div>
+                <label className="mt-4 block">
+                  <span className="mb-1 block text-sm font-semibold text-ink">
+                    Escolha o técnico que receberá os chamados
+                  </span>
+                  <Select
+                    value={redirectTo}
+                    onValueChange={(value) => {
+                      setRedirectTo(value)
+                      setRedirectReview(false)
+                    }}
+                  >
+                    <SelectTrigger aria-label="Técnico que receberá os chamados">
+                      <SelectValue placeholder="Selecione um técnico ativo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {activeLogins
+                      .filter((u) => u.toUpperCase() !== redirectFrom.usuario.toUpperCase())
+                      .map((u) => {
+                        const destination = query.data?.find(
+                          (item) => item.usuario.toUpperCase() === u.toUpperCase(),
+                        )
+                        return (
+                          <SelectItem key={u} value={u}>
+                            {u}{destination?.equipe ? ` · Equipe ${destination.equipe}` : ''}
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                </label>
+                <label className="mt-4 flex items-start gap-2 rounded-lg border border-line p-3 text-sm">
+                  <Checkbox
+                    checked={redirectOff}
+                    onCheckedChange={(checked) => setRedirectOff(checked === true)}
+                  />
+                  <span>
+                    <strong className="block">Desativar o técnico atual após a transferência</strong>
+                    <span className="text-xs text-muted">Se marcado, o robô não o escolherá para novas atribuições.</span>
+                  </span>
+                </label>
+              </>
+            ) : (
+              <div className="mt-4 rounded-lg border border-accent/30 bg-accent-soft/40 p-4">
+                <p className="text-xs font-semibold uppercase text-muted">Confira antes de confirmar</p>
+                <dl className="mt-3 space-y-3 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted">De</dt>
+                    <dd className="font-semibold text-ink">{redirectFrom.usuario}{redirectFrom.equipe ? ` · Equipe ${redirectFrom.equipe}` : ''}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Para</dt>
+                    <dd className="font-semibold text-ink">
+                      {redirectTo}{query.data?.find((item) => item.usuario.toUpperCase() === redirectTo.toUpperCase())?.equipe
+                        ? ` · Equipe ${query.data.find((item) => item.usuario.toUpperCase() === redirectTo.toUpperCase())?.equipe}`
+                        : ''}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Impacto</dt>
+                    <dd className="text-ink">Todos os chamados atribuídos a {redirectFrom.usuario} serão transferidos.</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Após a transferência</dt>
+                    <dd className="text-ink">{redirectOff ? `${redirectFrom.usuario} será desativado para novas atribuições.` : `${redirectFrom.usuario} continuará ativo para novas atribuições.`}</dd>
+                  </div>
+                </dl>
+              </div>
+            )}
             {formError ? (
               <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
                 {formError}
               </p>
             ) : null}
             <div className="mt-5 flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
-                className="rounded-lg border border-line px-3 py-2 text-sm"
-                onClick={() => setRedirectFrom(null)}
+                variant="outline"
+                onClick={() => {
+                  if (redirectReview) setRedirectReview(false)
+                  else setRedirectFrom(null)
+                }}
               >
-                Cancelar
-              </button>
-              <button
+                {redirectReview ? 'Voltar e ajustar' : 'Cancelar'}
+              </Button>
+              <Button
                 type="button"
-                className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
                 disabled={!redirectTo || redirectMut.isPending}
-                onClick={() => redirectMut.mutate()}
+                onClick={() => {
+                  if (redirectReview) redirectMut.mutate()
+                  else setRedirectReview(true)
+                }}
               >
-                {redirectMut.isPending ? 'Aplicando…' : 'Confirmar'}
-              </button>
+                {redirectMut.isPending
+                  ? 'Transferindo chamados…'
+                  : redirectReview
+                    ? 'Confirmar transferência'
+                    : 'Revisar transferência'}
+              </Button>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </div>
   )
 }
